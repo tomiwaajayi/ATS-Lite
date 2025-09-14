@@ -56,7 +56,7 @@ export const metadata: Metadata = {
       'A modern Applicant Tracking System with AI-powered natural language search. Query candidates and watch the transparent MCP workflow in action.',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://ats-lite-seven.vercel.app/og-image.png',
         width: 1200,
         height: 630,
         alt: 'ATS Lite - Modern Applicant Tracking System',
@@ -71,7 +71,7 @@ export const metadata: Metadata = {
     title: 'ATS Lite - Watch the ATS Think',
     description:
       'Modern ATS with AI-powered candidate search. Query with natural language and see the transparent workflow.',
-    images: ['/og-image.png'],
+    images: ['https://ats-lite-seven.vercel.app/og-image.png'],
   },
   verification: {
     google: 'google-site-verification-code-here', // Replace with actual verification code
@@ -84,7 +84,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://ats-lite.vercel.app'), // Update with your actual domain
+  metadataBase: new URL('https://ats-lite-seven.vercel.app'),
   alternates: {
     canonical: '/',
   },
@@ -112,7 +112,7 @@ export default function RootLayout({
     name: 'ATS Lite',
     description:
       'A modern Applicant Tracking System with AI-powered natural language search. Query candidates and watch the transparent MCP workflow in action.',
-    url: 'https://ats-lite.vercel.app',
+    url: 'https://ats-lite-seven.vercel.app',
     author: {
       '@type': 'Person',
       name: 'Tomiwa',
@@ -124,7 +124,7 @@ export default function RootLayout({
       price: '0',
       priceCurrency: 'USD',
     },
-    screenshot: 'https://ats-lite.vercel.app/og-image.png',
+    screenshot: 'https://ats-lite-seven.vercel.app/og-image.png',
     softwareVersion: '1.0.0',
     aggregateRating: {
       '@type': 'AggregateRating',
