@@ -412,8 +412,8 @@ export default function ChatPanel() {
             {/* Header */}
             <div className='flex items-center justify-between p-4 border-b border-border/50 bg-background/50 flex-shrink-0'>
               <div className='flex items-center gap-2'>
-                <div className='w-3 h-3 rounded-full bg-green-500' />
-                <span className='font-medium text-sm'>ATS-Lite Chat</span>
+                <div className='w-2 h-2 rounded-full bg-green-500' />
+                <span className='font-medium text-sm'>ATS-Lite</span>
               </div>
               <div className='flex items-center gap-1'>
                 <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
