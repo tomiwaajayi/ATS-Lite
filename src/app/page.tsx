@@ -1,103 +1,148 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, History } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import CandidateDetails from '@/components/CandidateDetails';
+import ChatPanel from '@/components/ChatPanel';
+import DarkModeToggle from '@/components/DarkModeToggle';
+import FieldsFilter from '@/components/FieldsFilter';
+import ResultTable from '@/components/ResultTable';
+import SplashScreen from '@/components/SplashScreen';
+import TimelineSidebar from '@/components/TimelineSidebar';
+import { Button } from '@/components/ui/button';
+import { loadCandidates } from '@/lib/candidates';
+import { useCandidatesStore, useChatStore, useUIStore } from '@/store';
+
+export default function HomePage() {
+  const {
+    setCandidates,
+    setRankedIds,
+    getRankedCandidates,
+    loading: candidatesLoading,
+  } = useCandidatesStore();
+
+  const { querySessions, clearSessions, isLoading: chatLoading } = useChatStore();
+
+  const { isTimelineSidebarVisible, toggleTimelineSidebar } = useUIStore();
+
+  const rankedCandidates = getRankedCandidates();
+  const loading = candidatesLoading || chatLoading;
+
+  // Splash screen state
+  const [showSplash, setShowSplash] = useState(true);
+  const [showContent, setShowContent] = useState(false);
+
+  const handleSplashComplete = () => {
+    setShowSplash(false);
+    // Small delay before showing content for smoother transition
+    setTimeout(() => {
+      setShowContent(true);
+    }, 100);
+  };
+
+  // Always show splash on page load/refresh
+  useEffect(() => {
+    // Always start with splash screen
+    setShowSplash(true);
+    setShowContent(false);
+  }, []);
+
+  useEffect(() => {
+    // Load candidates from CSV
+    loadCandidates('/candidates.csv').then(candidates => {
+      setCandidates(candidates);
+      // Initially show all candidates in their original order
+      const allIds = candidates.map(c => c.id);
+      setRankedIds(allIds);
+    });
+  }, [setCandidates, setRankedIds]);
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <>
+      <AnimatePresence mode='wait'>
+        {showSplash && <SplashScreen key='splash' onComplete={handleSplashComplete} />}
+      </AnimatePresence>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      <AnimatePresence mode='wait'>
+        {showContent && (
+          <motion.div
+            key='content'
+            initial={{ opacity: 0, scale: 0.95, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            transition={{
+              duration: 0.6,
+              ease: [0.25, 0.46, 0.45, 0.94],
+            }}
+            className='flex h-screen bg-background text-foreground'
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+            {/* Timeline Sidebar */}
+            <TimelineSidebar />
+
+            {/* Main Content */}
+            <motion.div
+              className='flex-1 flex flex-col min-w-0'
+              animate={{
+                marginLeft: isTimelineSidebarVisible ? '20rem' : '0rem',
+              }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            >
+              {/* Header */}
+              <header className='px-4 pt-4 bg-background/50 backdrop-blur-sm'>
+                <div className='flex items-center justify-between mb-3'>
+                  <div className='flex items-center gap-4'>
+                    <button
+                      onClick={toggleTimelineSidebar}
+                      className=' bg-background/90 backdrop-blur-sm rounded-md p-1.5  border border-border/50 hover:bg-muted/50 transition-colors cursor-pointer'
+                    >
+                      {isTimelineSidebarVisible ? (
+                        <ChevronLeft className='w-4 h-4' />
+                      ) : (
+                        <History className='w-4 h-4' />
+                      )}
+                    </button>
+                    <div>
+                      <h1 className='font-semibold text-xl'>Candidate Matches</h1>
+                      {!loading && (
+                        <p className='text-sm text-muted-foreground'>
+                          {rankedCandidates.length > 0
+                            ? `Showing ${rankedCandidates.length} results`
+                            : 'No results found'}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className='flex items-center gap-3'>
+                    <FieldsFilter />
+                    <DarkModeToggle />
+                    {querySessions.length > 0 && (
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={clearSessions}
+                        className='cursor-pointer'
+                      >
+                        Clear History
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </header>
+
+              {/* Main Table */}
+              <main className='flex-1 overflow-y-auto bg-background'>
+                <ResultTable />
+              </main>
+            </motion.div>
+
+            {/* Chat Panel */}
+            <ChatPanel />
+
+            {/* Candidate Details Sidebar */}
+            <CandidateDetails />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
