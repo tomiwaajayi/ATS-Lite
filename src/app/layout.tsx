@@ -73,11 +73,6 @@ export const metadata: Metadata = {
       'Modern ATS with AI-powered candidate search. Query with natural language and see the transparent workflow.',
     images: ['/og-image.png'],
   },
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
   verification: {
     google: 'google-site-verification-code-here', // Replace with actual verification code
   },

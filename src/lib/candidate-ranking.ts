@@ -1,6 +1,7 @@
 // Advanced candidate ranking system
 import type { Candidate, CandidateField } from '@/types/candidate';
 import type { RankingPlan, RankingResult, SortDirection } from '@/types/filtering';
+import { applyCandidateFilters } from './candidate-filtering';
 import { parseBoolean, normalizeString } from './filtering-utils';
 
 /**
@@ -237,9 +238,6 @@ export function filterAndRankCandidates(
   filterCount: number;
   totalProcessed: number;
 } {
-  // Import filtering function dynamically to avoid circular dependency
-  const { applyCandidateFilters } = require('./candidate-filtering');
-
   // Step 1: Apply filters
   const filterResult = filterPlan
     ? applyCandidateFilters(candidates, filterPlan)

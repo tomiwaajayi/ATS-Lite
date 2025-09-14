@@ -17,7 +17,7 @@ import { useCandidatesStore, useChatStore, useUIStore } from '@/store';
 export default function HomePage() {
   const { setCandidates, setRankedIds } = useCandidatesStore();
 
-  const { querySessions, clearSessions, isLoading: chatLoading } = useChatStore();
+  const { querySessions, clearSessions } = useChatStore();
 
   const { isTimelineSidebarVisible, toggleTimelineSidebar } = useUIStore();
 

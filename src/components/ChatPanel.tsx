@@ -82,7 +82,7 @@ export default function ChatPanel() {
 
       clearTimeout(timeoutId);
       return true;
-    } catch (e) {
+    } catch {
       toast.error('Network connection failed', {
         description: 'Unable to reach the server. Please check your internet connection.',
         duration: 4000,
