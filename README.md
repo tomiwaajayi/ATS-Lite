@@ -326,8 +326,8 @@ src/
 │   ├── FieldsFilter.tsx  # Column visibility controls
 │   ├── SplashScreen.tsx  # Animated loading screen
 │   └── ...               # Other UI components
-├── lib/                  # Core libraries and utilities
-│   ├── mcp/             # MCP workflow implementation
+├── services/             # Core services and utilities
+│   ├── mcp/              # MCP workflow implementation
 │   │   ├── workflow.ts   # Main orchestration
 │   │   ├── think.ts      # THINK phase logic
 │   │   ├── filter-act.ts # ACT 1 (filtering)
