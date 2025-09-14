@@ -15,19 +15,11 @@ import { loadCandidates } from '@/lib/candidates';
 import { useCandidatesStore, useChatStore, useUIStore } from '@/store';
 
 export default function HomePage() {
-  const {
-    setCandidates,
-    setRankedIds,
-    getRankedCandidates,
-    loading: candidatesLoading,
-  } = useCandidatesStore();
+  const { setCandidates, setRankedIds } = useCandidatesStore();
 
   const { querySessions, clearSessions, isLoading: chatLoading } = useChatStore();
 
   const { isTimelineSidebarVisible, toggleTimelineSidebar } = useUIStore();
-
-  const rankedCandidates = getRankedCandidates();
-  const loading = candidatesLoading || chatLoading;
 
   // Splash screen state
   const [showSplash, setShowSplash] = useState(true);
@@ -101,16 +93,7 @@ export default function HomePage() {
                         <History className='w-4 h-4' />
                       )}
                     </button>
-                    <div>
-                      <h1 className='font-semibold text-xl'>Candidate Matches</h1>
-                      {!loading && (
-                        <p className='text-sm text-muted-foreground'>
-                          {rankedCandidates.length > 0
-                            ? `Showing ${rankedCandidates.length} results`
-                            : 'No results found'}
-                        </p>
-                      )}
-                    </div>
+                    <h1 className='font-semibold text-xl'>Candidate Matches</h1>
                   </div>
                   <div className='flex items-center gap-3'>
                     <FieldsFilter />
