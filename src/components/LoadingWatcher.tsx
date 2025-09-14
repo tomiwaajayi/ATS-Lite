@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import NProgress from '@/lib/nprogress';
+import NProgress from '@/services/nprogress';
 import { useCandidatesStore, useChatStore } from '@/store';
 
 export default function LoadingWatcher() {

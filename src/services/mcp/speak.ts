@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
-import { StreamWriter, sendPhaseUpdate } from '@/lib/streaming';
-import { aggregateStats } from '@/lib/tools';
+import { StreamWriter, sendPhaseUpdate } from '@/services/streaming';
+import { aggregateStats } from '@/services/tools';
 import { Candidate } from '@/types';
 
 const openai = new OpenAI({

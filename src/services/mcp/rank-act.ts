@@ -1,4 +1,4 @@
-import { applyCandidateRanking } from '@/lib/candidate-ranking';
+import { applyCandidateRanking } from '@/services/candidate-ranking';
 import { Candidate } from '@/types/candidate';
 import { RankingPlan } from '@/types/filtering';
 

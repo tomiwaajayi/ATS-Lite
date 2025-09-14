@@ -7,7 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { StreamParser } from '@/lib/streaming';
+import { StreamParser } from '@/services/streaming';
 import { useCandidatesStore, useChatStore, useUIStore } from '@/store';
 
 export default function ChatPanel() {
@@ -34,7 +34,7 @@ export default function ChatPanel() {
     'React developers with 5+ years experience',
     'All engineers with 5+ years experience',
     'Mobile developers show least salary expectation first',
-    'Backend engineers in Germany, most experience first.',
+    'Engineers in Germany, most experience first.',
     'Backend engineers in the US',
     'Engineers in Nigeria with 2+ years experience',
   ];

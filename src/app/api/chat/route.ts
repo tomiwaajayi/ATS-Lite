@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
-import { loadCandidatesServer } from '@/lib/candidates-server';
-import { runMCPWorkflow } from '@/lib/mcp/workflow';
-import { createStreamWriter } from '@/lib/streaming';
+import { loadCandidatesServer } from '@/services/candidates-server';
+import { runMCPWorkflow } from '@/services/mcp/workflow';
+import { createStreamWriter } from '@/services/streaming';
 import { Candidate } from '@/types';
 
 // Don't reload the CSV file every time

@@ -11,7 +11,7 @@ import ResultTable from '@/components/ResultTable';
 import SplashScreen from '@/components/SplashScreen';
 import TimelineSidebar from '@/components/TimelineSidebar';
 import { Button } from '@/components/ui/button';
-import { loadCandidates } from '@/lib/candidates';
+import { loadCandidates } from '@/services/candidates';
 import { useCandidatesStore, useChatStore, useUIStore } from '@/store';
 
 export default function HomePage() {

@@ -4,8 +4,8 @@
  * Expectation: candidate #12 appears above #5
  */
 
-import { applyCandidateFilters } from '@/lib/candidate-filtering';
-import { applyCandidateRanking } from '@/lib/candidate-ranking';
+import { applyCandidateFilters } from '@/services/candidate-filtering';
+import { applyCandidateRanking } from '@/services/candidate-ranking';
 import type { Candidate } from '@/types/candidate';
 import type { FilterPlan, RankingPlan } from '@/types/filtering';
 

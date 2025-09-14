@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { ExternalLink, MapPin, Clock, Briefcase } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
 import {
   Table,
   TableBody,
@@ -195,76 +194,43 @@ const CellContent: React.FC<{
   );
 };
 
-// Mobile card component
-const CandidateCard: React.FC<{
-  candidate: Candidate;
-  onClick: () => void;
-  visibleFields: string[];
-  index: number;
-  searchKey: string;
-}> = ({ candidate, onClick, visibleFields, index, searchKey }) => {
-  const visibleConfigs = FIELD_CONFIGS.filter(config =>
-    visibleFields.includes(config.key as string)
-  );
+export default function ResultTable() {
+  const { getRankedCandidates, setSelectedCandidateId, loading, hasSearched, rankedIds } =
+    useCandidatesStore();
+  const { visibleFields, setChatExpanded } = useUIStore();
 
-  return (
-    <motion.div
-      key={`${searchKey}-${candidate.id}`} // Key includes search context
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-      transition={{
-        duration: 0.3,
-        delay: index * 0.03,
-        ease: 'easeOut',
-      }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <Card
-        className='cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/20'
-        onClick={onClick}
-      >
-        <CardContent className='p-4 space-y-3'>
-          {/* Header with name and title */}
-          <div className='flex flex-col gap-2'>
-            <div className='flex items-center justify-between'>
-              <CellContent
-                candidate={candidate}
-                field={FIELD_CONFIGS.find(f => f.key === 'full_name')!}
-              />
-              <span className='text-xs text-muted-foreground'>#{candidate.id}</span>
-            </div>
-            <CellContent
-              candidate={candidate}
-              field={FIELD_CONFIGS.find(f => f.key === 'title')!}
-              compact
-            />
+  const candidates = getRankedCandidates();
+
+  // Generate a key that only changes when search results change, not when UI filters change
+  const searchKey = `search-${rankedIds.join('-')}-${candidates.length}`;
+
+  const handleCandidateClick = (candidateId: number) => {
+    setSelectedCandidateId(candidateId);
+    setChatExpanded(false);
+  };
+
+  if (loading) {
+    return <TableSkeleton />;
+  }
+
+  if (candidates.length === 0) {
+    return (
+      <div className='flex flex-1 items-center justify-center p-4'>
+        <div className='text-center p-8'>
+          <div className='text-6xl mb-4'>{hasSearched ? '❌' : '🔍'}</div>
+          <div className='text-xl font-semibold mb-3'>
+            {hasSearched ? 'No candidates found' : 'No results yet'}
           </div>
-
-          {/* Key info grid */}
-          <div className='grid grid-cols-2 gap-2 text-sm'>
-            {visibleConfigs
-              .filter(config => !['full_name', 'title', 'id'].includes(config.key as string))
-              .slice(0, 6)
-              .map(config => (
-                <div key={config.key} className='flex flex-col gap-1'>
-                  <span className='text-xs font-medium text-muted-foreground'>{config.label}</span>
-                  <CellContent candidate={candidate} field={config} compact />
-                </div>
-              ))}
+          <div className='text-muted-foreground max-w-md'>
+            {hasSearched
+              ? 'No candidates match your current criteria. Try adjusting your search terms or expanding your requirements.'
+              : 'Start by asking a question in the chat to find candidates that match your needs.'}
           </div>
-        </CardContent>
-      </Card>
-    </motion.div>
-  );
-};
+        </div>
+      </div>
+    );
+  }
 
-const DesktopTable: React.FC<{
-  candidates: Candidate[];
-  visibleFields: string[];
-  onCandidateClick: (id: number) => void;
-  searchKey: string; // Key that changes only when search results change
-}> = ({ candidates, visibleFields, onCandidateClick, searchKey }) => {
   const visibleConfigs = FIELD_CONFIGS.filter(config =>
     visibleFields.includes(config.key as string)
   );
@@ -289,98 +255,6 @@ const DesktopTable: React.FC<{
   }, 0);
 
   return (
-    <div className='overflow-hidden rounded-lg border flex flex-col max-h-full'>
-      <div className='overflow-auto'>
-        <Table className='table-fixed' style={{ minWidth: `${totalWidth}px` }}>
-          <colgroup>
-            {visibleConfigs.map(config => (
-              <col key={config.key} className={config.width} />
-            ))}
-          </colgroup>
-          <TableHeader className='sticky top-0 bg-slate-100 dark:bg-slate-900 z-10'>
-            <TableRow>
-              {visibleConfigs.map(config => (
-                <TableHead key={config.key} className={`font-medium ${config.width} border-b`}>
-                  <div className='flex items-center gap-2 truncate'>
-                    <span className='truncate'>{config.label}</span>
-                  </div>
-                </TableHead>
-              ))}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <AnimatePresence>
-              {candidates.map((candidate, rowIndex) => (
-                <motion.tr
-                  key={`${searchKey}-${candidate.id}`}
-                  className='cursor-pointer hover:bg-muted/50 transition-colors border-b last:border-b-0'
-                  onClick={() => onCandidateClick(candidate.id)}
-                  initial={{ opacity: 0, y: 20, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                  transition={{
-                    duration: 0.4,
-                    delay: rowIndex * 0.05,
-                    ease: [0.25, 0.46, 0.45, 0.94],
-                  }}
-                >
-                  {visibleConfigs.map(config => (
-                    <TableCell key={config.key} className={`py-3 ${config.width}`}>
-                      <div className='truncate'>
-                        <CellContent candidate={candidate} field={config} />
-                      </div>
-                    </TableCell>
-                  ))}
-                </motion.tr>
-              ))}
-            </AnimatePresence>
-          </TableBody>
-        </Table>
-      </div>
-    </div>
-  );
-};
-
-const EmptyState: React.FC<{ hasSearched: boolean }> = ({ hasSearched }) => (
-  <div className='flex flex-1 items-center justify-center p-4'>
-    <div className='text-center p-8'>
-      <div className='text-6xl mb-4'>{hasSearched ? '❌' : '🔍'}</div>
-      <div className='text-xl font-semibold mb-3'>
-        {hasSearched ? 'No candidates found' : 'No results yet'}
-      </div>
-      <div className='text-muted-foreground max-w-md'>
-        {hasSearched
-          ? 'No candidates match your current criteria. Try adjusting your search terms or expanding your requirements.'
-          : 'Start by asking a question in the chat to find candidates that match your needs.'}
-      </div>
-    </div>
-  </div>
-);
-
-export default function ResultTable() {
-  const { getRankedCandidates, setSelectedCandidateId, loading, hasSearched, rankedIds } =
-    useCandidatesStore();
-  const { visibleFields, setChatExpanded } = useUIStore();
-
-  const candidates = getRankedCandidates();
-
-  // Generate a key that only changes when search results change, not when UI filters change
-  const searchKey = `search-${rankedIds.join('-')}-${candidates.length}`;
-
-  const handleCandidateClick = (candidateId: number) => {
-    setSelectedCandidateId(candidateId);
-    setChatExpanded(false);
-  };
-
-  if (loading) {
-    return <TableSkeleton />;
-  }
-
-  if (candidates.length === 0) {
-    return <EmptyState hasSearched={hasSearched} />;
-  }
-
-  return (
     <div className='h-full flex flex-col p-4'>
       <motion.div
         className='flex flex-col h-full'
@@ -397,34 +271,60 @@ export default function ResultTable() {
           </div>
         </div>
 
-        {/* Responsive content */}
         <div className='flex-1 min-h-0 flex flex-col'>
-          {/* Mobile: Card layout */}
-          <div className='lg:hidden overflow-y-auto'>
-            <div className='grid gap-3'>
-              <AnimatePresence>
-                {candidates.map((candidate, index) => (
-                  <CandidateCard
-                    key={`${searchKey}-${candidate.id}`}
-                    candidate={candidate}
-                    index={index}
-                    searchKey={searchKey}
-                    onClick={() => handleCandidateClick(candidate.id)}
-                    visibleFields={visibleFields}
-                  />
-                ))}
-              </AnimatePresence>
+          <div className='flex flex-1 flex-col min-h-0'>
+            <div className='overflow-hidden rounded-lg border flex flex-col max-h-full'>
+              <div className='overflow-auto'>
+                <Table className='table-fixed' style={{ minWidth: `${totalWidth}px` }}>
+                  <colgroup>
+                    {visibleConfigs.map(config => (
+                      <col key={config.key} className={config.width} />
+                    ))}
+                  </colgroup>
+                  <TableHeader className='sticky top-0 bg-slate-100 dark:bg-slate-900 z-10'>
+                    <TableRow>
+                      {visibleConfigs.map(config => (
+                        <TableHead
+                          key={config.key}
+                          className={`font-medium ${config.width} border-b`}
+                        >
+                          <div className='flex items-center gap-2 truncate'>
+                            <span className='truncate'>{config.label}</span>
+                          </div>
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <AnimatePresence>
+                      {candidates.map((candidate, rowIndex) => (
+                        <motion.tr
+                          key={`${searchKey}-${candidate.id}`}
+                          className='cursor-pointer hover:bg-muted/50 transition-colors border-b last:border-b-0'
+                          onClick={() => handleCandidateClick(candidate.id)}
+                          initial={{ opacity: 0, y: 20, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                          transition={{
+                            duration: 0.4,
+                            delay: rowIndex * 0.05,
+                            ease: [0.25, 0.46, 0.45, 0.94],
+                          }}
+                        >
+                          {visibleConfigs.map(config => (
+                            <TableCell key={config.key} className={`py-3 ${config.width}`}>
+                              <div className='truncate'>
+                                <CellContent candidate={candidate} field={config} />
+                              </div>
+                            </TableCell>
+                          ))}
+                        </motion.tr>
+                      ))}
+                    </AnimatePresence>
+                  </TableBody>
+                </Table>
+              </div>
             </div>
-          </div>
-
-          {/* Desktop: Table layout */}
-          <div className='hidden lg:flex flex-1 flex-col min-h-0'>
-            <DesktopTable
-              candidates={candidates}
-              visibleFields={visibleFields}
-              searchKey={searchKey}
-              onCandidateClick={handleCandidateClick}
-            />
           </div>
         </div>
       </motion.div>

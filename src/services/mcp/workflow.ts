@@ -1,5 +1,5 @@
-import { StreamWriter, sendPhaseUpdate } from '@/lib/streaming';
-import { aggregateStats, setCandidatesGlobal } from '@/lib/tools';
+import { StreamWriter, sendPhaseUpdate } from '@/services/streaming';
+import { aggregateStats, setCandidatesGlobal } from '@/services/tools';
 import { Candidate } from '@/types/candidate';
 import { performFilterPhase } from './filter-act';
 import { performRankPhase } from './rank-act';

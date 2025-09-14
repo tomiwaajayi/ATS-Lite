@@ -1,4 +1,4 @@
-import { applyCandidateFilters } from '@/lib/candidate-filtering';
+import { applyCandidateFilters } from '@/services/candidate-filtering';
 import { Candidate } from '@/types/candidate';
 import { FilterPlan } from '@/types/filtering';
 

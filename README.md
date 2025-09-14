@@ -22,14 +22,14 @@ Act → Speak**.
   - Get your API key from
     [OpenAI Platform](https://platform.openai.com/api-keys)
   - The system uses GPT-4o-mini for query processing and response generation
-  - **No fallback**: The application requires a valid API key to function
+  - The application requires a valid API key to function
 
 ### Quick Start
 
 1. **Clone the repository:**
 
    ```bash
-   git clone [your-repository-url]
+   git clone git@github.com:tomiwaajayi/ATS-Lite.git
    cd ats-lite
    ```
 
@@ -249,7 +249,6 @@ export function aggregateStatsSpec(ids: number[]): StatsResult {
 
 ### Result Table
 
-- **Responsive Design**: Card layout on mobile, table on desktop
 - **Animated Rows**: FLIP animations when candidates reorder
 - **Rich Data Display**: Badges, currency formatting, skill tags
 - **Field Customization**: Toggle columns via FieldsFilter component

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
-import { applyCandidateFilters } from '@/lib/candidate-filtering';
-import { applyCandidateRanking } from '@/lib/candidate-ranking';
+import { applyCandidateFilters } from '@/services/candidate-filtering';
+import { applyCandidateRanking } from '@/services/candidate-ranking';
 import { Candidate } from '@/types/candidate';
 import { FilterPlan, RankingPlan } from '@/types/filtering';
 
