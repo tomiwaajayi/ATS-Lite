@@ -17,5 +17,5 @@ export default function LoadingWatcher() {
     }
   }, [loading]);
 
-  return null; // no UI, just side-effect
+  return null;
 }

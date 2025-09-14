@@ -1,32 +1,30 @@
-// Enhanced filtering and ranking types for MCP-style candidate processing
+// Types for filtering and sorting candidates
 
 import { CandidateField } from './candidate';
 
 export type SortDirection = 'asc' | 'desc';
 
-/**
- * Include criteria with comprehensive filtering options
- * Supports both single values and arrays for flexible matching
- */
+// What we want to include in results
+// Can use single values or arrays
 export interface IncludeFilterCriteria {
-  // Basic string fields - supports partial matching
+  // Text fields (partial matching)
   title?: string | string[];
   location?: string | string[];
   full_name?: string | string[];
   degree_major?: string | string[];
 
-  // Semicolon-separated fields - supports multi-value matching
+  // Skills, languages, etc
   skills?: string | string[];
   languages?: string | string[];
   citizenships?: string | string[];
   tags?: string | string[];
 
-  // Enumerated fields - exact matches
+  // Dropdown-style fields
   education_level?: string | string[];
   work_preference?: string | string[];
   visa_status?: string | string[];
 
-  // Numeric range filters with min/max boundaries
+  // Number ranges
   years_experience_min?: number;
   years_experience_max?: number;
   desired_salary_min?: number;
@@ -34,105 +32,86 @@ export interface IncludeFilterCriteria {
   remote_experience_years_min?: number;
   remote_experience_years_max?: number;
 
-  // Maximum threshold filters (useful for availability constraints)
+  // Maximum values only
   availability_weeks_max?: number;
   notice_period_weeks_max?: number;
 
-  // Boolean preference filters
+  // Yes/no questions
   willing_to_relocate?: boolean;
   open_to_contract?: boolean;
 
-  // Extensibility for future filter criteria
+  // Room for future fields
   [key: string]: unknown;
 }
 
-/**
- * Exclude criteria - simpler than include (no ranges, just exact matches)
- * Any match with exclude criteria removes the candidate from results
- */
+// What we want to exclude from results
+// Simpler than include - just exact matches
 export interface ExcludeFilterCriteria {
-  // Basic string fields
+  // Text fields
   title?: string | string[];
   location?: string | string[];
   full_name?: string | string[];
   degree_major?: string | string[];
 
-  // Semicolon-separated fields
+  // Skills, languages, etc
   skills?: string | string[];
   languages?: string | string[];
   citizenships?: string | string[];
   tags?: string | string[];
 
-  // Enumerated fields
+  // Dropdown-style fields
   education_level?: string | string[];
   work_preference?: string | string[];
   visa_status?: string | string[];
 
-  // Extensibility for future exclusion criteria
+  // Room for future fields
   [key: string]: unknown;
 }
 
-/**
- * Main filter plan combining include and exclude criteria
- * Process: first apply exclusions (early exit), then apply inclusions (all must match)
- */
+// Complete filter plan
+// Process: exclude first, then include
 export interface FilterPlan {
   include?: IncludeFilterCriteria;
   exclude?: ExcludeFilterCriteria;
 }
 
-/**
- * Individual ranking criteria specification
- */
+// How to sort by one field
 export interface RankingCriteria {
   field: CandidateField;
   direction: SortDirection;
 }
 
-/**
- * Complete ranking plan with primary sort and optional tie-breakers
- * Tie-breakers are applied in order when primary comparison results in equality
- */
+// Complete sorting plan
+// Primary sort + tie-breakers
 export interface RankingPlan {
   primary: RankingCriteria;
   tie_breakers?: RankingCriteria[];
 }
 
-/**
- * Combined MCP processing plans for filter + rank operations
- * This matches the MCP workflow structure described in xyz.md
- */
+// Filter and rank plans together
 export interface MCPPlans {
   filter: FilterPlan;
   rank: RankingPlan;
 }
 
-/**
- * Result of filter operation with metrics
- */
+// Results after filtering
 export interface FilterResult<T> {
   filtered: T[];
   count: number;
   totalProcessed: number;
 }
 
-/**
- * Result of ranking operation with ordered data
- */
+// Results after sorting
 export interface RankingResult<T> {
   ranked: T[];
   rankedIds: number[];
   criteria: RankingPlan | null;
 }
 
-/**
- * Union type for all possible filter values
- */
+// Any type of filter value
 export type FilterValue = string | string[] | number | boolean | undefined;
 
-/**
- * Processing pipeline result combining filter and rank operations
- */
+// Complete processing results
 export interface ProcessingResult<T> {
   filtered: T[];
   ranked: T[];

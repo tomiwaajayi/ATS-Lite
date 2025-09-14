@@ -1,19 +1,15 @@
-// Filtering utilities inspired by MCP approach but reimplemented differently
-/**
- * Text normalization for consistent comparisons
- */
+// Helper functions for matching and filtering candidates
+// Clean up text for better matching
 export function normalizeString(text: string): string {
   return text
     .toLowerCase()
     .trim()
-    .replace(/\s+/g, ' ') // normalize whitespace
-    .replace(/[^\w\s]/g, ''); // remove punctuation
+    .replace(/\s+/g, ' ') // fix weird spacing
+    .replace(/[^\w\s]/g, ''); // strip punctuation
 }
 
-/**
- * Check if any search terms match within a semicolon-separated string field
- * Supports regex patterns in /pattern/flags format
- */
+// Check skills, languages, etc (semicolon-separated fields)
+// Also handles regex like /Backend/i
 export function matchesInSeparatedString(
   searchTerms: string | string[] | undefined,
   candidateValue: string | undefined
@@ -25,7 +21,7 @@ export function matchesInSeparatedString(
   const normalizedValues = values.map(v => normalizeString(v));
 
   return terms.some(term => {
-    // Handle regex patterns
+    // Try regex first
     if (typeof term === 'string' && term.startsWith('/') && term.includes('/')) {
       try {
         const lastSlashIndex = term.lastIndexOf('/');
@@ -34,22 +30,20 @@ export function matchesInSeparatedString(
         const regex = new RegExp(pattern, flags);
         return values.some(value => regex.test(value));
       } catch {
-        // Fall back to string matching if regex is invalid
+        // Bad regex? Just do normal matching
         const normalizedTerm = normalizeString(term);
         return normalizedValues.some(value => value.includes(normalizedTerm));
       }
     }
 
-    // Regular string matching
+    // Normal text matching
     const normalizedTerm = normalizeString(term);
     return normalizedValues.some(value => value.includes(normalizedTerm));
   });
 }
 
-/**
- * Check if search terms match a single string field (like location or name)
- * Supports regex patterns in /pattern/flags format
- */
+// Check single text fields like name or location
+// Also handles regex patterns
 export function matchesInSingleString(
   searchTerms: string | string[] | undefined,
   candidateValue: string | undefined
@@ -60,7 +54,7 @@ export function matchesInSingleString(
   const normalizedValue = normalizeString(candidateValue);
 
   return terms.some(term => {
-    // Handle regex patterns
+    // Try regex first
     if (typeof term === 'string' && term.startsWith('/') && term.includes('/')) {
       try {
         const lastSlashIndex = term.lastIndexOf('/');
@@ -69,19 +63,17 @@ export function matchesInSingleString(
         const regex = new RegExp(pattern, flags);
         return regex.test(candidateValue);
       } catch {
-        // Fall back to string matching if regex is invalid
+        // Bad regex? Just do normal matching
         return normalizedValue.includes(normalizeString(term));
       }
     }
 
-    // Regular string matching
+    // Normal text matching
     return normalizedValue.includes(normalizeString(term));
   });
 }
 
-/**
- * Check if ALL search terms are present in a semicolon-separated string field
- */
+// Make sure candidate has ALL the required skills/languages
 export function containsAllTerms(
   requiredTerms: string[] | undefined,
   candidateValue: string | undefined
@@ -95,9 +87,7 @@ export function containsAllTerms(
   return normalizedTerms.every(term => values.some(value => value.includes(term)));
 }
 
-/**
- * Check numeric range conditions
- */
+// Check if number is within min/max range
 export function isInRange(value: number | undefined, min?: number, max?: number): boolean {
   if (value === undefined || value === null) return false;
   if (min !== undefined && value < min) return false;
@@ -105,18 +95,14 @@ export function isInRange(value: number | undefined, min?: number, max?: number)
   return true;
 }
 
-/**
- * Convert boolean-like strings to actual booleans for filtering
- */
+// Convert "Yes"/"No" strings to true/false
 export function parseBoolean(value: string | boolean): boolean {
   if (typeof value === 'boolean') return value;
   const normalized = normalizeString(value.toString());
   return normalized === 'yes' || normalized === 'true' || normalized === '1';
 }
 
-/**
- * Get array of skills from semicolon-separated string
- */
+// Split skills string into array
 export function getSkillsArray(skillsString: string | undefined): string[] {
   if (!skillsString) return [];
   return skillsString
@@ -125,9 +111,7 @@ export function getSkillsArray(skillsString: string | undefined): string[] {
     .filter(Boolean);
 }
 
-/**
- * Get array of languages from semicolon-separated string
- */
+// Split languages string into array
 export function getLanguagesArray(languagesString: string | undefined): string[] {
   if (!languagesString) return [];
   return languagesString
@@ -136,9 +120,7 @@ export function getLanguagesArray(languagesString: string | undefined): string[]
     .filter(Boolean);
 }
 
-/**
- * Get array of citizenships from semicolon-separated string
- */
+// Split citizenships string into array
 export function getCitizenshipsArray(citizenshipsString: string | undefined): string[] {
   if (!citizenshipsString) return [];
   return citizenshipsString
@@ -147,9 +129,7 @@ export function getCitizenshipsArray(citizenshipsString: string | undefined): st
     .filter(Boolean);
 }
 
-/**
- * Get array of tags from semicolon-separated string
- */
+// Split tags string into array
 export function getTagsArray(tagsString: string | undefined): string[] {
   if (!tagsString) return [];
   return tagsString

@@ -259,7 +259,6 @@ const CandidateCard: React.FC<{
   );
 };
 
-// Desktop table component
 const DesktopTable: React.FC<{
   candidates: Candidate[];
   visibleFields: string[];
@@ -342,7 +341,6 @@ const DesktopTable: React.FC<{
   );
 };
 
-// Empty state component
 const EmptyState: React.FC<{ hasSearched: boolean }> = ({ hasSearched }) => (
   <div className='flex flex-1 items-center justify-center p-4'>
     <div className='text-center p-8'>
@@ -359,7 +357,6 @@ const EmptyState: React.FC<{ hasSearched: boolean }> = ({ hasSearched }) => (
   </div>
 );
 
-// Main component
 export default function ResultTable() {
   const { getRankedCandidates, setSelectedCandidateId, loading, hasSearched, rankedIds } =
     useCandidatesStore();

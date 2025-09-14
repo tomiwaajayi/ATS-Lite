@@ -10,43 +10,43 @@ interface Message {
 }
 
 interface ChatState {
-  // Chat messages
+  // Message history
   messages: Message[];
   input: string;
   isLoading: boolean;
 
-  // Query sessions and timeline
+  // Track user queries and progress
   querySessions: QuerySession[];
   currentSessionId: string | null;
 
-  // Actions
+  // Functions to update state
   setInput: (input: string) => void;
   setLoading: (loading: boolean) => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => string;
   updateMessage: (id: string, updates: Partial<Message>) => void;
   clearMessages: () => void;
 
-  // Session management
+  // Query session functions
   startNewSession: (query: string) => string;
   addPhaseToSession: (sessionId: string, phase: Omit<MCPPhase, 'id'>) => void;
   updatePhaseInSession: (sessionId: string, phaseId: string, updates: Partial<MCPPhase>) => void;
   completeSession: (sessionId: string) => void;
   clearSessions: () => void;
 
-  // Getters
+  // Helper functions
   getCurrentSession: () => QuerySession | null;
   getSessionPhases: (sessionId: string) => MCPPhase[];
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
-  // Initial state
+  // Default values
   messages: [],
   input: '',
   isLoading: false,
   querySessions: [],
   currentSessionId: null,
 
-  // Message actions
+  // Message functions
   setInput: input => set({ input }),
 
   setLoading: isLoading => set({ isLoading }),
@@ -68,7 +68,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   clearMessages: () => set({ messages: [] }),
 
-  // Session management
+  // Session functions
   startNewSession: query => {
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newSession: QuerySession = {
@@ -85,7 +85,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         .map(s => ({
           ...s,
           isActive: false,
-          // Mark all previous sessions as completed to collapse their timelines
+          // Collapse old timelines
           completed: true,
         }))
         .concat(newSession),
@@ -138,7 +138,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       currentSessionId: null,
     }),
 
-  // Getters
+  // Helper functions
   getCurrentSession: () => {
     const { querySessions, currentSessionId } = get();
     return querySessions.find(s => s.id === currentSessionId) || null;

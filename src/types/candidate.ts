@@ -1,11 +1,11 @@
-// Candidate-related types and enums
+// Candidate data types
 
 export type EducationLevel = 'PhD' | "Master's" | "Bachelor's" | 'Bootcamp';
 export type WorkPreference = 'Remote' | 'Hybrid' | 'Onsite';
 export type VisaStatus = 'Citizen' | 'Work Visa' | 'Needs Sponsorship' | 'Permanent Resident';
 export type BooleanString = 'Yes' | 'No';
 
-// Core candidate interface with proper types
+// Main candidate data structure
 export interface Candidate {
   id: number;
   full_name: string;
@@ -30,11 +30,11 @@ export interface Candidate {
   tags: string; // semicolon-separated
   last_active: string; // ISO date string
   linkedin_url: string;
-  // Allow dynamic field access for filtering/ranking
+  // For dynamic field access
   [key: string]: unknown;
 }
 
-// Parsed candidate data with arrays for better handling
+// Candidate with parsed arrays instead of strings
 export interface ParsedCandidate
   extends Omit<
     Candidate,
@@ -49,7 +49,7 @@ export interface ParsedCandidate
   last_active: Date;
 }
 
-// Common candidate field names for filtering/sorting
+// All possible candidate fields
 export type CandidateField = keyof Candidate;
 
 export type NumericCandidateField =

@@ -15,14 +15,12 @@ const QUERY_VALIDATION = {
   ],
 };
 
-/**
- * Enhanced Think phase execution with improved validation and error handling
- */
+// Process user queries and generate filtering/ranking plans
 export async function performThinkPhase(
   userQuery: string,
   csvHeaders: string[]
 ): Promise<MCPPlans> {
-  // Input validation
+  // Basic input checks
   if (!userQuery?.trim()) {
     throw new Error('User query is required and cannot be empty');
   }
@@ -41,7 +39,7 @@ export async function performThinkPhase(
     throw new Error(`Query too long. Maximum ${QUERY_VALIDATION.MAX_LENGTH} characters allowed`);
   }
 
-  // Check for suspicious patterns
+  // Filter out junk queries
   for (const pattern of QUERY_VALIDATION.SUSPICIOUS_PATTERNS) {
     if (pattern.test(sanitizedQuery)) {
       throw new Error('Invalid query format detected');
@@ -56,7 +54,7 @@ async function performThinkPhaseWithRetry(
   csvHeaders: string[],
   maxRetries: number
 ): Promise<MCPPlans> {
-  // Enhanced system prompt with better examples and edge case handling
+  // Build the main system prompt for the LLM
   const systemPrompt = `You are an ATS assistant specialized in candidate filtering and ranking.
 
 CRITICAL: Respond with ONLY valid JSON. No explanations, no markdown, no extra text.
@@ -120,7 +118,7 @@ EXAMPLES:
 - "cloud architect with GCP" → include: {"title": "/Cloud.*Architect/i", "skills": "GCP"}
 - "DevOps with cloud experience" → include: {"title": "/DevOps/i", "tags": "cloud"}`;
 
-  // Enhanced logging with structured data
+  // Log the request details
   const logData = {
     model: 'gpt-4o-mini',
     query: userQuery.slice(0, 100) + (userQuery.length > 100 ? '...' : ''),
@@ -196,14 +194,12 @@ EXAMPLES:
   }
 }
 
-/**
- * Enhanced response parsing with better error handling
- */
+// Parse and validate the LLM response
 async function parseAndValidateResponse(content: string, originalQuery: string): Promise<MCPPlans> {
-  // Advanced content cleaning with multiple fallback strategies
+  // Clean up the response content
   let cleanContent = content.trim();
 
-  // Remove common markdown artifacts
+  // Strip markdown formatting
   const cleaningPatterns: Array<{ pattern: RegExp; replacement: string }> = [
     { pattern: /^```json\s*/, replacement: '' }, // Remove json code block start
     { pattern: /\s*```$/, replacement: '' }, // Remove code block end
@@ -221,7 +217,7 @@ async function parseAndValidateResponse(content: string, originalQuery: string):
   if (jsonMatch) {
     cleanContent = jsonMatch[0];
   } else {
-    // If no JSON object found, try to find JSON array or object patterns
+    // Try to extract any JSON-like structure
     const alternativeMatch = cleanContent.match(/[\{\[][\s\S]*[\}\]]/);
     if (alternativeMatch) {
       cleanContent = alternativeMatch[0];
@@ -231,7 +227,7 @@ async function parseAndValidateResponse(content: string, originalQuery: string):
   try {
     const plans = JSON.parse(cleanContent) as MCPPlans;
 
-    // Comprehensive validation with helpful error messages
+    // Make sure the response format is correct
     const validationErrors = validateMCPPlans(plans);
     if (validationErrors.length > 0) {
       throw new Error(`Plan validation failed: ${validationErrors.join(', ')}`);
@@ -260,9 +256,7 @@ async function parseAndValidateResponse(content: string, originalQuery: string):
   }
 }
 
-/**
- * Validates MCPPlans structure and returns array of error messages
- */
+// Check if the plans object has the right structure
 function validateMCPPlans(plans: any): string[] {
   const errors: string[] = [];
 
@@ -311,18 +305,16 @@ function validateMCPPlans(plans: any): string[] {
   return errors;
 }
 
-/**
- * Creates an intelligent fallback plan based on query analysis
- */
+// Fallback when LLM fails - try to guess what the user wants
 function createIntelligentFallback(userQuery: string): MCPPlans {
   const queryLower = userQuery.toLowerCase();
 
-  // Try to extract some meaning from the query for a better fallback
+  // Parse query keywords to make a decent guess
   const fallbackFilter: any = { title: ['__NO_MATCH__'] }; // Default restrictive filter
   let fallbackRankField = 'years_experience';
   let fallbackDirection: 'asc' | 'desc' = 'desc';
 
-  // Simple keyword-based fallback logic
+  // Basic keyword matching
   if (
     queryLower.includes('experience') ||
     queryLower.includes('senior') ||

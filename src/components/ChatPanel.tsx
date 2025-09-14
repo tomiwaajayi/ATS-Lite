@@ -13,7 +13,7 @@ import { useCandidatesStore, useChatStore, useUIStore } from '@/store';
 export default function ChatPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Store state
+  // Get state from stores
   const { setRankedIds, setLoading, setHasSearched } = useCandidatesStore();
   const {
     messages,
@@ -29,7 +29,7 @@ export default function ChatPanel() {
   } = useChatStore();
   const { isChatExpanded, setChatExpanded } = useUIStore();
 
-  // Rotating suggestions
+  // Sample queries to show users
   const suggestions = [
     'React developers with 5+ years experience',
     'All engineers with 5+ years experience',
@@ -41,7 +41,7 @@ export default function ChatPanel() {
 
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
 
-  // Rotate suggestions every 5 seconds
+  // Cycle through suggestions
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSuggestionIndex(prevIndex => (prevIndex + 1) % suggestions.length);
@@ -50,12 +50,12 @@ export default function ChatPanel() {
     return () => clearInterval(interval);
   }, [suggestions.length]);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Keep chat scrolled to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Handle chat expansion
+  // Open the chat panel
   const handleExpand = () => {
     setChatExpanded(true);
   };
@@ -70,7 +70,7 @@ export default function ChatPanel() {
       return false;
     }
 
-    // Additional check by trying to reach a reliable endpoint
+    // Try pinging our test endpoint
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 3000);
@@ -91,11 +91,11 @@ export default function ChatPanel() {
     }
   };
 
-  // Handle suggestion click
+  // User clicked on a suggested query
   const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading) return;
 
-    // Check network connectivity first
+    // Make sure we're online
     const isConnected = await checkNetworkConnection();
     if (!isConnected) return;
 
@@ -103,14 +103,14 @@ export default function ChatPanel() {
     setChatLoading(true);
     setLoading(true);
 
-    // Add user message
+    // Show user's message in chat
     addMessage({ type: 'user', content: suggestion });
     const userQuery = suggestion;
 
-    // Start new session
+    // Begin new conversation
     const sessionId = startNewSession(userQuery);
 
-    // Add assistant message placeholder
+    // Create empty response message
     const assistantMessageId = addMessage({
       type: 'assistant',
       content: '',
@@ -154,13 +154,13 @@ export default function ChatPanel() {
                 data: chunk.data,
               });
 
-              // Update table immediately after ranking is complete
+              // Show results as soon as ranking is done
               if (chunk.phase === 'rank' && chunk.data?.rankedIds) {
-                // Small delay to ensure smooth transition
+                // Brief delay for animation
                 setTimeout(() => {
                   setRankedIds(chunk.data?.rankedIds as number[]);
-                  setHasSearched(true); // Mark that a search has been performed
-                  setLoading(false); // Ensure loading state is cleared
+                  setHasSearched(true); // Track that we searched
+                  setLoading(false); // Stop loading
                 }, 100);
               }
               break;
@@ -179,12 +179,12 @@ export default function ChatPanel() {
               updateMessage(assistantMessageId, { streaming: false });
               completeSession(sessionId);
 
-              // Update ranked IDs if available (including empty arrays for no results)
+              // Update results (even if empty)
               if (chunk.data?.finalResults !== undefined) {
                 setRankedIds(chunk.data.finalResults as number[]);
                 setHasSearched(true); // Mark that a search has been performed
               }
-              setLoading(false); // Always clear loading state on completion
+              setLoading(false); // Done loading
               break;
 
             case 'error':
@@ -192,7 +192,7 @@ export default function ChatPanel() {
                 content: `Error: ${chunk.error}`,
                 streaming: false,
               });
-              setLoading(false); // Clear loading state on error
+              setLoading(false); // Stop loading on error
               break;
           }
         }
@@ -214,22 +214,22 @@ export default function ChatPanel() {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
 
-    // Check network connectivity first
+    // Make sure we're online
     const isConnected = await checkNetworkConnection();
     if (!isConnected) return;
 
     setChatLoading(true);
     setLoading(true);
 
-    // Add user message
+    // Show user's message in chat
     addMessage({ type: 'user', content: input.trim() });
     const userQuery = input.trim();
     setInput('');
 
-    // Start new session
+    // Begin new conversation
     const sessionId = startNewSession(userQuery);
 
-    // Add assistant message placeholder
+    // Create empty response message
     const assistantMessageId = addMessage({
       type: 'assistant',
       content: '',
@@ -277,13 +277,13 @@ export default function ChatPanel() {
                 data: chunk.data,
               });
 
-              // Update table immediately after ranking is complete
+              // Show results as soon as ranking is done
               if (chunk.phase === 'rank' && chunk.data?.rankedIds) {
-                // Small delay to ensure smooth transition
+                // Brief delay for animation
                 setTimeout(() => {
                   setRankedIds(chunk.data?.rankedIds as number[]);
-                  setHasSearched(true); // Mark that a search has been performed
-                  setLoading(false); // Ensure loading state is cleared
+                  setHasSearched(true); // Track that we searched
+                  setLoading(false); // Stop loading
                 }, 100);
               }
               break;
@@ -302,12 +302,12 @@ export default function ChatPanel() {
               updateMessage(assistantMessageId, { streaming: false });
               completeSession(sessionId);
 
-              // Update ranked IDs if available (including empty arrays for no results)
+              // Update results (even if empty)
               if (chunk.data?.finalResults !== undefined) {
                 setRankedIds(chunk.data.finalResults as number[]);
                 setHasSearched(true); // Mark that a search has been performed
               }
-              setLoading(false); // Always clear loading state on completion
+              setLoading(false); // Done loading
               break;
 
             case 'error':
@@ -316,13 +316,13 @@ export default function ChatPanel() {
                 streaming: false,
               });
               completeSession(sessionId);
-              setLoading(false); // Clear loading state on error
+              setLoading(false); // Stop loading on error
               break;
           }
         }
       }
 
-      // Handle any remaining buffer
+      // Process any leftover data
       const remainingChunks = parser.flush();
       for (const chunk of remainingChunks) {
         if (chunk.type === 'content' && chunk.content) {
@@ -355,7 +355,7 @@ export default function ChatPanel() {
 
   return (
     <>
-      {/* Chat Button - Always positioned bottom-right */}
+      {/* Floating chat button */}
       <AnimatePresence>
         {!isChatExpanded && (
           <motion.button
@@ -379,7 +379,7 @@ export default function ChatPanel() {
         )}
       </AnimatePresence>
 
-      {/* Chat Panel - Also positioned bottom-right */}
+      {/* Main chat window */}
       <AnimatePresence>
         {isChatExpanded && (
           <motion.div
@@ -409,7 +409,7 @@ export default function ChatPanel() {
               transformOrigin: 'bottom right',
             }}
           >
-            {/* Header */}
+            {/* Chat header */}
             <div className='flex items-center justify-between p-4 border-b border-border/50 bg-background/50 flex-shrink-0'>
               <div className='flex items-center gap-2'>
                 <div className='w-2 h-2 rounded-full bg-green-500' />
@@ -429,7 +429,7 @@ export default function ChatPanel() {
               </div>
             </div>
 
-            {/* Messages */}
+            {/* Message list */}
             <div className='flex-1 overflow-y-auto p-4 space-y-4 min-h-0'>
               {messages.length === 0 && (
                 <div className='text-center text-muted-foreground py-8 mt-10'>
@@ -553,7 +553,7 @@ export default function ChatPanel() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input */}
+            {/* Message input */}
             <div className='p-4 border-t border-border/50 bg-background/30'>
               <form onSubmit={handleSubmit} className='flex gap-2'>
                 <Textarea

@@ -1,4 +1,4 @@
-// MCP (Model-Control-Plan) workflow types
+// Workflow phase and session types
 
 export type MCPPhaseType = 'think' | 'filter' | 'rank' | 'speak' | 'complete' | 'error';
 
@@ -21,7 +21,7 @@ export interface QuerySession {
   error?: string;
 }
 
-// MCP Workflow execution context
+// Workflow execution context
 export interface MCPWorkflowContext {
   sessionId: string;
   userQuery: string;
@@ -30,7 +30,7 @@ export interface MCPWorkflowContext {
   phases: MCPPhase[];
 }
 
-// MCP Phase execution result
+// MCP phase result
 export interface MCPPhaseResult {
   success: boolean;
   phase: MCPPhaseType;
@@ -39,7 +39,7 @@ export interface MCPPhaseResult {
   error?: string;
 }
 
-// MCP Workflow execution result
+// Complete workflow result
 export interface MCPWorkflowResult {
   sessionId: string;
   success: boolean;

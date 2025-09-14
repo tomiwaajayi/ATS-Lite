@@ -1,53 +1,47 @@
-// Advanced candidate ranking system
+// Sort candidates by experience, salary, etc
 import type { Candidate, CandidateField } from '@/types/candidate';
 import type { RankingPlan, RankingResult, SortDirection } from '@/types/filtering';
 import { applyCandidateFilters } from './candidate-filtering';
 import { parseBoolean, normalizeString } from './filtering-utils';
 
-/**
- * Compare two values based on their type and sort direction
- */
+// Compare two values for sorting
 function compareValues(a: unknown, b: unknown, direction: SortDirection): number {
   let comparison = 0;
 
-  // Handle null/undefined values - push them to the end
+  // Handle empty values
   if (a == null && b == null) return 0;
   if (a == null) return 1;
   if (b == null) return -1;
 
-  // String comparison
+  // Compare strings
   if (typeof a === 'string' && typeof b === 'string') {
     comparison = normalizeString(a).localeCompare(normalizeString(b));
   }
-  // Numeric comparison
+  // Compare numbers
   else if (typeof a === 'number' && typeof b === 'number') {
     comparison = a - b;
   }
-  // Boolean comparison (convert strings like "Yes"/"No" to boolean first)
+  // Handle Yes/No values
   else if (typeof a === 'string' && typeof b === 'string') {
     const boolA = parseBoolean(a);
     const boolB = parseBoolean(b);
     comparison = boolA === boolB ? 0 : boolA ? 1 : -1;
   }
-  // Mixed types - convert to string and compare
+  // Fallback to string comparison
   else {
     comparison = String(a).localeCompare(String(b));
   }
 
-  // Apply sort direction
+  // Reverse for descending
   return direction === 'desc' ? -comparison : comparison;
 }
 
-/**
- * Get the value of a specific field from a candidate
- */
+// Extract field value from candidate object
 function getCandidateFieldValue(candidate: Candidate, field: CandidateField): unknown {
   return candidate[field];
 }
 
-/**
- * Apply ranking criteria to a set of candidates
- */
+// Sort candidates according to ranking plan
 export function applyCandidateRanking(
   candidates: Candidate[],
   rankingPlan: RankingPlan
@@ -55,7 +49,7 @@ export function applyCandidateRanking(
   const startTime = performance.now();
 
   if (!rankingPlan || !rankingPlan.primary) {
-    // No ranking plan provided, return candidates in original order
+    // No sorting needed
     return {
       ranked: candidates,
       rankedIds: candidates.map(c => c.id),
@@ -63,12 +57,12 @@ export function applyCandidateRanking(
     };
   }
 
-  // Create a copy to avoid mutating the original array
+  // Don't modify the original array
   const candidatesToRank = [...candidates];
 
-  // Sort based on ranking criteria
+  // Do the actual sorting
   candidatesToRank.sort((candidateA, candidateB) => {
-    // Primary comparison
+    // Main sorting field
     const primaryFieldA = getCandidateFieldValue(candidateA, rankingPlan.primary.field);
     const primaryFieldB = getCandidateFieldValue(candidateB, rankingPlan.primary.field);
 
@@ -78,12 +72,12 @@ export function applyCandidateRanking(
       rankingPlan.primary.direction
     );
 
-    // If primary comparison results in a clear winner, return that
+    // Done if primary field gives us a winner
     if (primaryComparison !== 0) {
       return primaryComparison;
     }
 
-    // Apply tie-breakers in sequence
+    // Handle ties with secondary fields
     if (rankingPlan.tie_breakers && rankingPlan.tie_breakers.length > 0) {
       for (const tieBreaker of rankingPlan.tie_breakers) {
         const tieBreakerFieldA = getCandidateFieldValue(candidateA, tieBreaker.field);
@@ -101,13 +95,13 @@ export function applyCandidateRanking(
       }
     }
 
-    // Final tie-breaker: sort by ID for consistent results
+    // Last resort: sort by ID
     return candidateA.id - candidateB.id;
   });
 
   const endTime = performance.now();
 
-  // Optional: Log performance for debugging
+  // Log performance in dev mode
   if (process.env.NODE_ENV === 'development') {
     console.log(`Ranking took ${endTime - startTime}ms for ${candidates.length} candidates`);
   }
@@ -119,9 +113,7 @@ export function applyCandidateRanking(
   };
 }
 
-/**
- * Create a basic ranking plan for common scenarios
- */
+// Helper to build ranking plans quickly
 export function createBasicRankingPlan(
   primaryField: CandidateField,
   primaryDirection: SortDirection = 'desc',
@@ -136,55 +128,51 @@ export function createBasicRankingPlan(
   };
 }
 
-/**
- * Pre-defined ranking plans for common use cases
- */
+// Common ranking setups ready to use
 export const COMMON_RANKING_PLANS = {
   // Most experienced first
   BY_EXPERIENCE_DESC: createBasicRankingPlan('years_experience', 'desc', [
-    { field: 'desired_salary_usd', direction: 'asc' }, // Prefer lower salary as tie-breaker
+    { field: 'desired_salary_usd', direction: 'asc' }, // Prefer lower salary
     { field: 'full_name', direction: 'asc' },
   ]),
 
-  // Least experienced first (for junior roles)
+  // For junior positions
   BY_EXPERIENCE_ASC: createBasicRankingPlan('years_experience', 'asc', [
     { field: 'desired_salary_usd', direction: 'asc' },
     { field: 'full_name', direction: 'asc' },
   ]),
 
-  // Lowest salary expectation first
+  // Budget-friendly first
   BY_SALARY_ASC: createBasicRankingPlan('desired_salary_usd', 'asc', [
     { field: 'years_experience', direction: 'desc' },
     { field: 'full_name', direction: 'asc' },
   ]),
 
-  // Highest salary expectation first
+  // Premium candidates first
   BY_SALARY_DESC: createBasicRankingPlan('desired_salary_usd', 'desc', [
     { field: 'years_experience', direction: 'desc' },
     { field: 'full_name', direction: 'asc' },
   ]),
 
-  // Alphabetical by name
+  // A-Z by name
   BY_NAME: createBasicRankingPlan('full_name', 'asc', [
     { field: 'years_experience', direction: 'desc' },
   ]),
 
-  // By availability (soonest first)
+  // Available ASAP first
   BY_AVAILABILITY: createBasicRankingPlan('availability_weeks', 'asc', [
     { field: 'notice_period_weeks', direction: 'asc' },
     { field: 'years_experience', direction: 'desc' },
   ]),
 
-  // By location (alphabetical)
+  // Location A-Z
   BY_LOCATION: createBasicRankingPlan('location', 'asc', [
     { field: 'years_experience', direction: 'desc' },
     { field: 'full_name', direction: 'asc' },
   ]),
 } as const;
 
-/**
- * Validate that a ranking plan is well-formed
- */
+// Check if ranking plan is valid
 export function validateRankingPlan(rankingPlan: RankingPlan): {
   isValid: boolean;
   errors: string[];
@@ -209,7 +197,7 @@ export function validateRankingPlan(rankingPlan: RankingPlan): {
     errors.push('Primary ranking criteria direction must be "asc" or "desc"');
   }
 
-  // Validate tie-breakers if present
+  // Check tie-breakers too
   if (rankingPlan.tie_breakers) {
     rankingPlan.tie_breakers.forEach((tieBreaker, index) => {
       if (!tieBreaker.field) {
@@ -224,9 +212,7 @@ export function validateRankingPlan(rankingPlan: RankingPlan): {
   return { isValid: errors.length === 0, errors };
 }
 
-/**
- * Combine filtering and ranking in a single operation
- */
+// Filter then rank - one-stop function
 export function filterAndRankCandidates(
   candidates: Candidate[],
   filterPlan?: Parameters<typeof import('./candidate-filtering').applyCandidateFilters>[1],
@@ -238,12 +224,12 @@ export function filterAndRankCandidates(
   filterCount: number;
   totalProcessed: number;
 } {
-  // Step 1: Apply filters
+  // Filter first
   const filterResult = filterPlan
     ? applyCandidateFilters(candidates, filterPlan)
     : { filtered: candidates, count: candidates.length, totalProcessed: candidates.length };
 
-  // Step 2: Apply ranking
+  // Then rank
   const rankingResult = rankingPlan
     ? applyCandidateRanking(filterResult.filtered, rankingPlan)
     : {

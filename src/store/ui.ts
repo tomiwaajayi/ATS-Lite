@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 interface UIState {
-  // Dark mode
+  // Theme setting
   isDarkMode: boolean;
 
   // Timeline sidebar
@@ -22,7 +22,7 @@ interface UIState {
   showIntroAnimation: boolean;
   componentsLoaded: boolean;
 
-  // Actions
+  // Functions to update state
   toggleTimelineSidebar: () => void;
   setTimelineSidebarVisible: (visible: boolean) => void;
 
@@ -43,10 +43,10 @@ interface UIState {
 export const useUIStore = create<UIState>()(
   persist(
     set => ({
-      // Initial state
+      // Default values
       isDarkMode: false,
       isTimelineSidebarVisible: true,
-      isChatExpanded: true, // Chat starts open on page load
+      isChatExpanded: true, // Start with chat open
       isCandidateDetailsVisible: false,
       isFieldsFilterOpen: false,
       visibleFields: [
@@ -81,11 +81,11 @@ export const useUIStore = create<UIState>()(
       setVisibleFields: visibleFields => set({ visibleFields }),
 
       toggleFieldVisibility: field => {
-        const compulsoryFields = ['id', 'full_name'];
+        const requiredFields = ['id', 'full_name'];
         set(state => ({
           visibleFields: state.visibleFields.includes(field)
-            ? compulsoryFields.includes(field)
-              ? state.visibleFields // Don't remove compulsory fields
+            ? requiredFields.includes(field)
+              ? state.visibleFields // Don't remove required fields
               : state.visibleFields.filter(f => f !== field)
             : [...state.visibleFields, field],
         }));
@@ -100,7 +100,7 @@ export const useUIStore = create<UIState>()(
       setComponentsLoaded: componentsLoaded => set({ componentsLoaded }),
     }),
     {
-      name: 'ats-lite-ui-storage', // localStorage key
+      name: 'ats-lite-ui-storage', // Storage key
       partialize: state => ({
         isDarkMode: state.isDarkMode,
         isTimelineSidebarVisible: state.isTimelineSidebarVisible,

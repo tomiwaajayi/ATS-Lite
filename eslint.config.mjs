@@ -37,10 +37,10 @@ const eslintConfig = [
       parser: (await import('@typescript-eslint/parser')).default,
     },
     rules: {
-      // Prettier integration
+      // Prettier rules
       'prettier/prettier': 'error',
 
-      // TypeScript specific rules (only for .ts/.tsx files)
+      // TypeScript rules
       '@typescript-eslint/no-unused-vars': [
         'error',
         {
@@ -51,7 +51,7 @@ const eslintConfig = [
       '@typescript-eslint/no-explicit-any': 'warn',
       '@typescript-eslint/no-inferrable-types': 'error',
 
-      // React/Next.js specific rules
+      // React/Next.js rules
       'react/jsx-curly-brace-presence': [
         'error',
         {
@@ -62,13 +62,13 @@ const eslintConfig = [
       'react/self-closing-comp': 'error',
       'react-hooks/exhaustive-deps': 'warn',
 
-      // General code quality
+      // Code quality
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'prefer-const': 'error',
       'no-var': 'error',
 
-      // Import rules
+      // Import sorting
       'import/order': [
         'error',
         {

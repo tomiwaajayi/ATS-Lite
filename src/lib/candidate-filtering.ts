@@ -1,4 +1,4 @@
-// Advanced candidate filtering system
+// Filter candidates based on various criteria
 import type { Candidate } from '@/types/candidate';
 import type { FilterPlan, FilterResult } from '@/types/filtering';
 import {
@@ -9,16 +9,14 @@ import {
   parseBoolean,
 } from './filtering-utils';
 
-/**
- * Apply exclusion filters - returns true if candidate should be EXCLUDED
- */
+// Returns true if we should exclude this candidate
 function shouldExcludeCandidate(
   candidate: Candidate,
   excludeCriteria: FilterPlan['exclude']
 ): boolean {
   if (!excludeCriteria) return false;
 
-  // Check exclusion for string fields
+  // String field exclusions
   if (excludeCriteria.title && matchesInSingleString(excludeCriteria.title, candidate.title))
     return true;
   if (
@@ -32,7 +30,7 @@ function shouldExcludeCandidate(
   )
     return true;
 
-  // Check exclusion for array-like fields
+  // Array field exclusions
   if (excludeCriteria.skills && matchesInSeparatedString(excludeCriteria.skills, candidate.skills))
     return true;
   if (
@@ -48,7 +46,7 @@ function shouldExcludeCandidate(
   if (excludeCriteria.tags && matchesInSeparatedString(excludeCriteria.tags, candidate.tags))
     return true;
 
-  // Check exclusion for enum fields
+  // Enum field exclusions
   if (
     excludeCriteria.education_level &&
     matchesInSingleString(excludeCriteria.education_level, candidate.education_level)
@@ -73,16 +71,14 @@ function shouldExcludeCandidate(
   return false;
 }
 
-/**
- * Apply inclusion filters - returns true if candidate meets ALL inclusion criteria
- */
+// Returns true if candidate passes all our requirements
 function meetsInclusionCriteria(
   candidate: Candidate,
   includeCriteria: FilterPlan['include']
 ): boolean {
   if (!includeCriteria) return true;
 
-  // String field matches
+  // Check string fields
   if (includeCriteria.title && !matchesInSingleString(includeCriteria.title, candidate.title))
     return false;
   if (
@@ -96,7 +92,7 @@ function meetsInclusionCriteria(
   )
     return false;
 
-  // Array field requirements (ALL required terms must be present)
+  // Must have all required skills/languages/etc
   if (includeCriteria.skills) {
     const requiredSkills = Array.isArray(includeCriteria.skills)
       ? includeCriteria.skills
@@ -125,7 +121,7 @@ function meetsInclusionCriteria(
     if (!containsAllTerms(requiredTags, candidate.tags)) return false;
   }
 
-  // Enum field matches
+  // Check enum fields
   if (
     includeCriteria.education_level &&
     !matchesInSingleString(includeCriteria.education_level, candidate.education_level)
@@ -147,7 +143,7 @@ function meetsInclusionCriteria(
   )
     return false;
 
-  // Numeric range filters
+  // Experience and salary ranges
   if (
     !isInRange(
       candidate.years_experience,
@@ -173,7 +169,7 @@ function meetsInclusionCriteria(
   )
     return false;
 
-  // Maximum value filters
+  // Max availability and notice period
   if (
     includeCriteria.availability_weeks_max !== undefined &&
     candidate.availability_weeks > includeCriteria.availability_weeks_max
@@ -185,7 +181,7 @@ function meetsInclusionCriteria(
   )
     return false;
 
-  // Boolean filters
+  // Yes/no questions
   if (includeCriteria.willing_to_relocate !== undefined) {
     const candidateValue = parseBoolean(candidate.willing_to_relocate);
     if (candidateValue !== includeCriteria.willing_to_relocate) return false;
@@ -199,16 +195,14 @@ function meetsInclusionCriteria(
   return true;
 }
 
-/**
- * Main filtering function that applies both exclusion and inclusion filters
- */
+// Main function - filter candidates based on the plan
 export function applyCandidateFilters(
   candidates: Candidate[],
   filterPlan: FilterPlan
 ): FilterResult<Candidate> {
   const startTime = performance.now();
 
-  // If no filter criteria, return all candidates
+  // No filters? Return everyone
   if (!filterPlan || (!filterPlan.include && !filterPlan.exclude)) {
     return {
       filtered: candidates,
@@ -218,18 +212,18 @@ export function applyCandidateFilters(
   }
 
   const filteredCandidates = candidates.filter(candidate => {
-    // First apply exclusion filters - if excluded, reject immediately
+    // Check excludes first - fast rejection
     if (shouldExcludeCandidate(candidate, filterPlan.exclude)) {
       return false;
     }
 
-    // Then apply inclusion filters - must meet all criteria
+    // Then check if they meet our requirements
     return meetsInclusionCriteria(candidate, filterPlan.include);
   });
 
   const endTime = performance.now();
 
-  // Optional: Log performance for debugging
+  // Log performance in dev mode
   if (process.env.NODE_ENV === 'development') {
     console.log(`Filtering took ${endTime - startTime}ms for ${candidates.length} candidates`);
   }
@@ -241,9 +235,7 @@ export function applyCandidateFilters(
   };
 }
 
-/**
- * Helper function to create a basic filter plan
- */
+// Quick way to create common filter setups
 export function createBasicFilterPlan(
   includeSkills?: string[],
   includeLocation?: string[],
@@ -264,9 +256,7 @@ export function createBasicFilterPlan(
   };
 }
 
-/**
- * Validate that a filter plan has meaningful criteria
- */
+// Make sure the filter plan makes sense
 export function validateFilterPlan(filterPlan: FilterPlan): { isValid: boolean; errors: string[] } {
   const errors: string[] = [];
 
@@ -280,7 +270,7 @@ export function validateFilterPlan(filterPlan: FilterPlan): { isValid: boolean; 
     return { isValid: false, errors };
   }
 
-  // Validate numeric ranges
+  // Check that min/max ranges are logical
   if (filterPlan.include) {
     const { include } = filterPlan;
 

@@ -11,7 +11,7 @@ export async function runMCPWorkflow(
   userQuery: string,
   candidates: Candidate[]
 ): Promise<void> {
-  // Input validation
+  // Basic sanity checks
   if (!userQuery?.trim()) {
     await sendPhaseUpdate(writer, {
       type: 'error',
@@ -33,12 +33,12 @@ export async function runMCPWorkflow(
   }
 
   try {
-    // Set global candidates for specification-compliant tools
+    // Make candidates available to other functions
     setCandidatesGlobal(candidates);
 
     const csvHeaders = Object.keys(candidates[0]);
 
-    // Production logging should be minimal - only log in development
+    // Only log in dev mode
     if (process.env.NODE_ENV === 'development') {
       console.log(`Processing query: "${userQuery}" with ${candidates.length} candidates`);
     }
@@ -54,7 +54,7 @@ export async function runMCPWorkflow(
 
     const plans = await performThinkPhase(userQuery, csvHeaders);
 
-    // Validate plans
+    // Make sure we got valid plans back
     if (!plans?.filter || !plans?.rank?.primary?.field) {
       throw new Error('Invalid plans generated - missing required filter or ranking criteria');
     }
@@ -80,7 +80,7 @@ export async function runMCPWorkflow(
       timestamp: new Date(),
     });
 
-    // Small delay to show the filtering phase in timeline
+    // Brief pause so users can see the progress
     await new Promise(resolve => setTimeout(resolve, 400));
 
     const { filtered, count } = performFilterPhase(candidates, plans.filter);
@@ -102,7 +102,7 @@ export async function runMCPWorkflow(
       timestamp: new Date(),
     });
 
-    // Small delay before proceeding to ranking phase
+    // Another small pause
     await new Promise(resolve => setTimeout(resolve, 500));
 
     if (count === 0) {
@@ -134,7 +134,7 @@ export async function runMCPWorkflow(
       timestamp: new Date(),
     });
 
-    // Small delay to show the ranking phase in timeline
+    // Show ranking progress
     await new Promise(resolve => setTimeout(resolve, 400));
 
     const { ranked, rankedIds } = performRankPhase(filtered, plans.rank);
@@ -143,7 +143,7 @@ export async function runMCPWorkflow(
       console.log(`Ranked ${ranked.length} candidates`);
     }
 
-    // Generate quick stats for richer timeline display
+    // Get some stats for the UI
     const stats = aggregateStats(rankedIds);
 
     await sendPhaseUpdate(writer, {
@@ -164,7 +164,7 @@ export async function runMCPWorkflow(
       timestamp: new Date(),
     });
 
-    // Small delay before proceeding to speak phase
+    // One more pause
     await new Promise(resolve => setTimeout(resolve, 500));
 
     // SPEAK Phase
@@ -176,7 +176,7 @@ export async function runMCPWorkflow(
       timestamp: new Date(),
     });
 
-    await performSpeakPhase(writer, userQuery, ranked.slice(0, 10)); // Limit to top 10 for performance
+    await performSpeakPhase(writer, userQuery, ranked.slice(0, 10)); // Top 10 is enough
 
     // Complete
     await sendPhaseUpdate(writer, {
@@ -193,7 +193,7 @@ export async function runMCPWorkflow(
       console.log(`Workflow completed successfully for query: "${userQuery}"`);
     }
   } catch (error) {
-    // Always log errors regardless of environment
+    // Always log errors
     console.error('MCP Workflow error:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
 

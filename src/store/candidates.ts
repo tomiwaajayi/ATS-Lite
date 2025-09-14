@@ -5,17 +5,17 @@ import { Candidate } from '@/types/candidate';
 import { FilterPlan, RankingPlan } from '@/types/filtering';
 
 interface CandidatesState {
-  // Data
+  // Main data
   candidates: Candidate[];
   filteredIds: number[];
   rankedIds: number[];
   selectedCandidateId: number | null;
 
-  // Plans for tracking current filters/ranking
+  // Remember what filters/sorting we're using
   currentFilterPlan: FilterPlan | null;
   currentRankingPlan: RankingPlan | null;
 
-  // Loading states
+  // UI states
   loading: boolean;
   hasSearched: boolean;
 
@@ -40,7 +40,7 @@ interface CandidatesState {
 }
 
 export const useCandidatesStore = create<CandidatesState>((set, get) => ({
-  // Initial state
+  // Default values
   candidates: [],
   filteredIds: [],
   rankedIds: [],
@@ -77,10 +77,10 @@ export const useCandidatesStore = create<CandidatesState>((set, get) => ({
   applyFiltersAndRanking: (filterPlan, rankingPlan) => {
     const { candidates } = get();
 
-    // Apply filtering first
+    // Filter first
     const filterResult = applyCandidateFilters(candidates, filterPlan);
 
-    // Then apply ranking to filtered results
+    // Then sort the filtered results
     const rankingResult = applyCandidateRanking(filterResult.filtered, rankingPlan);
 
     set({
@@ -95,10 +95,10 @@ export const useCandidatesStore = create<CandidatesState>((set, get) => ({
   applyFilters: filterPlan => {
     const { candidates, currentRankingPlan } = get();
 
-    // Apply filtering
+    // Do the filtering
     const filterResult = applyCandidateFilters(candidates, filterPlan);
 
-    // Re-apply current ranking if we have one
+    // Re-sort if we were sorting before
     let rankedIds = filterResult.filtered.map(c => c.id);
     if (currentRankingPlan) {
       const rankingResult = applyCandidateRanking(filterResult.filtered, currentRankingPlan);
@@ -116,7 +116,7 @@ export const useCandidatesStore = create<CandidatesState>((set, get) => ({
   applyRanking: rankingPlan => {
     const { filteredIds, candidates } = get();
 
-    // Get currently filtered candidates
+    // Work with the filtered candidates
     const filteredCandidates =
       filteredIds.length > 0
         ? filteredIds
@@ -124,7 +124,7 @@ export const useCandidatesStore = create<CandidatesState>((set, get) => ({
             .filter((c): c is Candidate => c !== undefined)
         : candidates;
 
-    // Apply ranking
+    // Do the ranking
     const rankingResult = applyCandidateRanking(filteredCandidates, rankingPlan);
 
     set({
@@ -144,11 +144,11 @@ export const useCandidatesStore = create<CandidatesState>((set, get) => ({
 
   getRankedCandidates: () => {
     const { candidates, rankedIds, hasSearched } = get();
-    // If no search has been performed yet, show initial "no results found" state
+    // No search yet? Show nothing
     if (!hasSearched && rankedIds.length === 0) return [];
-    // If search was performed but no results, show empty (which triggers "no results" message)
+    // Search done but empty results
     if (hasSearched && rankedIds.length === 0) return [];
-    // If we have rankedIds, show those candidates
+    // Show the ranked candidates
     return rankedIds
       .map(id => candidates.find(c => c.id === id))
       .filter((c): c is Candidate => c !== undefined);
