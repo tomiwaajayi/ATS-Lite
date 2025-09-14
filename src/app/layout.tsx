@@ -49,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://ats-lite.vercel.app',
+    url: 'https://ats-lite-seven.vercel.app/',
     siteName: 'ATS Lite',
     title: 'ATS Lite - Watch the ATS Think',
     description:
