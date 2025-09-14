@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { ThinkAPIRequest, ThinkAPIResponse } from '@/types/api';
-import { FilterPlan, RankingPlan } from '@/types/filtering';
+import { ThinkAPIRequest } from '@/types/api';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 export async function POST(request: NextRequest) {
-  let userMessage = '';
-
   try {
     const requestData: ThinkAPIRequest = await request.json();
-    userMessage = requestData.userMessage;
+    const userMessage = requestData.userMessage;
     const csvHeaders = requestData.csvHeaders;
 
     if (!process.env.OPENAI_API_KEY) {
-      // Return mock response if no API key
-      return NextResponse.json(getMockThinkResponse(userMessage));
+      return new Response('OpenAI API key not configured', { status: 500 });
     }
 
     const prompt = `You are an ATS assistant. Generate filter and ranking plans from natural language queries.
@@ -79,125 +75,17 @@ Rules:
     });
 
     const responseText = completion.choices[0]?.message?.content?.trim();
-    if (responseText) {
-      const parsed = JSON.parse(responseText);
-      return NextResponse.json(parsed);
+    if (!responseText) {
+      return new Response('No response from OpenAI', { status: 500 });
     }
 
-    // Fallback to mock if parsing fails
-    return NextResponse.json(getMockThinkResponse(userMessage));
+    const parsed = JSON.parse(responseText);
+    return NextResponse.json(parsed);
   } catch (error) {
     console.error('OpenAI API error:', error);
-    // Fall back to mock implementation
-    return NextResponse.json(getMockThinkResponse(userMessage));
+    return new Response(
+      `OpenAI API error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { status: 500 }
+    );
   }
-}
-
-function getMockThinkResponse(userMessage: string): ThinkAPIResponse {
-  const message = userMessage.toLowerCase();
-  const filter: FilterPlan = { include: {} };
-  const rank: RankingPlan = { primary: { field: 'years_experience', direction: 'desc' } };
-
-  // Title filtering - prioritize specific qualifiers over general terms
-  if (message.includes('backend')) {
-    // Backend developers/engineers
-    filter.include!.title = '/Backend/';
-  } else if (message.includes('frontend')) {
-    // Frontend developers/engineers
-    filter.include!.title = '/Frontend/';
-  } else if (
-    message.includes('fullstack') ||
-    message.includes('full-stack') ||
-    message.includes('full stack')
-  ) {
-    // Full-stack developers
-    filter.include!.title = '/Full.*Stack/';
-  } else if (message.includes('devops')) {
-    filter.include!.title = '/DevOps/';
-  } else if (message.includes('mobile')) {
-    filter.include!.title = '/Mobile/';
-  } else if (message.includes('data scientist')) {
-    filter.include!.title = '/Data Scientist/';
-  } else if (message.includes('machine learning') || message.includes('ml engineer')) {
-    filter.include!.title = '/Machine Learning/';
-  } else if (message.includes('cloud')) {
-    filter.include!.title = '/Cloud/';
-  } else if (message.includes('product engineer')) {
-    filter.include!.title = '/Product Engineer/';
-  } else if (message.includes('qa') || message.includes('quality assurance')) {
-    filter.include!.title = '/QA/';
-  } else if (message.includes('react')) {
-    filter.include!.skills = 'React'; // Use skills for React since it's in skills field
-  } else if (message.includes('developer') || message.includes('dev ')) {
-    // Only use broad matching if no specific qualifier was found
-    filter.include!.title = ['/Developer/', '/Engineer/'];
-  } else if (message.includes('engineer')) {
-    filter.include!.title = '/Engineer/';
-  }
-
-  // Location filtering - handle various country name formats
-  if (message.includes('germany')) {
-    filter.include!.location = 'Germany';
-  } else if (message.includes('cyprus')) {
-    filter.include!.location = 'Cyprus';
-  } else if (
-    message.includes('usa') ||
-    message.includes(' us ') ||
-    message.includes('the us') ||
-    message.includes('united states') ||
-    message.includes('america')
-  ) {
-    filter.include!.location = 'USA';
-  } else if (
-    message.includes('uk') ||
-    message.includes('united kingdom') ||
-    message.includes('britain')
-  ) {
-    filter.include!.location = 'UK';
-  } else if (message.includes('south africa')) {
-    filter.include!.location = 'South Africa';
-  } else if (message.includes('new york')) {
-    filter.include!.location = 'New York';
-  } else if (message.includes('san francisco')) {
-    filter.include!.location = 'San Francisco';
-  } else if (message.includes('berlin')) {
-    filter.include!.location = 'Berlin';
-  }
-
-  // Skills filtering
-  if (message.includes('react') && !message.includes('title')) {
-    filter.include!.skills = 'React';
-  } else if (message.includes('python')) {
-    filter.include!.skills = 'Python';
-  } else if (message.includes('javascript')) {
-    filter.include!.skills = 'JavaScript';
-  }
-
-  // Experience filtering
-  if (message.includes('senior') || message.includes('10+') || message.includes('experienced')) {
-    filter.include!.years_experience_min = 5;
-  } else if (message.includes('junior')) {
-    filter.include!.years_experience_max = 3;
-  }
-
-  // Ranking logic
-  let direction: 'asc' | 'desc' = 'desc';
-  if (message.includes('least') || message.includes('last') || message.includes('ascending')) {
-    direction = 'asc';
-  }
-
-  if (message.includes('salary') || message.includes('paid')) {
-    rank!.primary = { field: 'desired_salary_usd', direction: 'desc' };
-  } else if (message.includes('available')) {
-    rank!.primary = { field: 'availability_weeks', direction: 'asc' };
-  } else {
-    rank!.primary = { field: 'years_experience', direction };
-  }
-
-  // Ensure we have meaningful filter criteria
-  if (Object.keys(filter.include!).length === 0) {
-    filter.include!.title = '__NO_MATCH__';
-  }
-
-  return { filter, rank };
 }

@@ -1,5 +1,5 @@
 import { StreamWriter, sendPhaseUpdate } from '@/lib/streaming';
-import { aggregateStats } from '@/lib/tools';
+import { aggregateStats, setCandidatesGlobal } from '@/lib/tools';
 import { Candidate } from '@/types/candidate';
 import { performFilterPhase } from './filter-act';
 import { performRankPhase } from './rank-act';
@@ -33,6 +33,9 @@ export async function runMCPWorkflow(
   }
 
   try {
+    // Set global candidates for specification-compliant tools
+    setCandidatesGlobal(candidates);
+
     const csvHeaders = Object.keys(candidates[0]);
 
     // Production logging should be minimal - only log in development
@@ -141,7 +144,7 @@ export async function runMCPWorkflow(
     }
 
     // Generate quick stats for richer timeline display
-    const stats = aggregateStats(rankedIds, candidates);
+    const stats = aggregateStats(rankedIds);
 
     await sendPhaseUpdate(writer, {
       type: 'phase',

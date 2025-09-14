@@ -1,98 +1,55 @@
 import { Candidate } from '@/types/candidate';
-import { RankingPlan } from '@/types/filtering';
+import { FilterPlan, RankingPlan } from '@/types/filtering';
+import { applyCandidateFilters } from './candidate-filtering';
+import { applyCandidateRanking } from './candidate-ranking';
 
-// Helper functions for numeric comparisons
-function parseNumeric(value: unknown): number {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    const cleaned = value.replace(/[$,]/g, '');
-    return parseInt(cleaned) || 0;
-  }
-  return 0;
+// Global candidate storage for  tools
+let candidatesGlobal: Candidate[] = [];
+
+/**
+ * Set the global candidates array for use by tools
+ * This allows the tools to match the exact specification signatures
+ */
+export function setCandidatesGlobal(candidates: Candidate[]) {
+  candidatesGlobal = candidates;
 }
 
-// Optimized comparison function
-function compareValues(a: unknown, b: unknown): number {
-  // Handle null/undefined
-  if (a == null && b == null) return 0;
-  if (a == null) return -1;
-  if (b == null) return 1;
+// === TOOL SIGNATURES ===
+// These functions match the exact signatures required by xyz.md
 
-  // Convert to comparable values
-  const aValue = parseNumeric(a);
-  const bValue = parseNumeric(b);
-
-  // If both successfully parse to numbers, compare numerically
-  if (!isNaN(aValue) && !isNaN(bValue)) {
-    return aValue - bValue;
-  }
-
-  // Handle boolean values
-  if (typeof a === 'boolean' && typeof b === 'boolean') {
-    return a === b ? 0 : a ? 1 : -1;
-  }
-
-  // Default to string comparison
-  return String(a).localeCompare(String(b));
+/**
+ * Filters candidates based on the provided filter plan
+ * Specification: filterCandidates(plan) → { include?, exclude? } → Candidate[]
+ */
+export function filterCandidates(plan: FilterPlan): Candidate[] {
+  const result = applyCandidateFilters(candidatesGlobal, plan);
+  return result.filtered;
 }
 
 /**
- * Ranks candidates by the specified criteria with optimized sorting algorithms
- * Supports primary sorting and tie-breakers with asc/desc directions
- *
- * @param candidateIds - Array of candidate IDs to rank (per specification)
- * @param plan - Ranking plan with primary field and optional tie-breakers
- * @param candidates - Complete candidates array for lookup
- * @returns Sorted array of candidates in ranked order
+ * Ranks candidates by the specified criteria
+ * Specification: rankCandidates(ids, plan) → { primary, tie_breakers? } → Candidate[]
  */
-export function rankCandidates(
-  candidateIds: number[],
-  plan: RankingPlan,
-  candidates: Candidate[]
-): Candidate[] {
-  const rows = candidateIds
-    .map(id => candidates.find(c => c.id === id))
+export function rankCandidates(ids: number[], plan: RankingPlan): Candidate[] {
+  // Get candidates by IDs
+  const candidates = ids
+    .map(id => candidatesGlobal.find(c => c.id === id))
     .filter((c): c is Candidate => c !== undefined);
-  if (!rows.length || !plan?.primary?.field) return rows;
 
-  return [...rows].sort((a, b) => {
-    // Primary sort
-    let comparison = compareValues(a[plan.primary.field], b[plan.primary.field]);
+  if (!candidates.length) return [];
 
-    if (plan.primary.direction === 'desc') {
-      comparison = -comparison;
-    }
-
-    if (comparison !== 0) return comparison;
-
-    // Apply tie breakers
-    if (plan.tie_breakers) {
-      for (const tieBreaker of plan.tie_breakers) {
-        let tieComparison = compareValues(a[tieBreaker.field], b[tieBreaker.field]);
-
-        if (tieBreaker.direction === 'desc') {
-          tieComparison = -tieComparison;
-        }
-
-        if (tieComparison !== 0) return tieComparison;
-      }
-    }
-
-    return 0;
-  });
+  const result = applyCandidateRanking(candidates, plan);
+  return result.ranked;
 }
 
 /**
- * Aggregates statistics from ranked candidates for rich summaries
- * Calculates averages, top skills, breakdowns, and other insights
- *
- * @param rankedIds - Array of ranked candidate IDs (per specification)
- * @param candidates - Complete candidates array for lookup
- * @returns Rich statistics object with counts, averages, and breakdowns
+ * Aggregates statistics from candidate IDs
+ * Specification: aggregateStats(ids) → ids[] → { count, avg_experience, top_skills[] }
+ * Enhanced with additional stats for rich MCP workflow summaries
  */
-export function aggregateStats(rankedIds: number[], candidates: Candidate[]) {
-  const filteredCandidates = rankedIds
-    .map(id => candidates.find(c => c.id === id))
+export function aggregateStats(ids: number[]) {
+  const filteredCandidates = ids
+    .map(id => candidatesGlobal.find(c => c.id === id))
     .filter((c): c is Candidate => c !== undefined);
 
   if (!filteredCandidates.length) {
@@ -177,4 +134,15 @@ export function aggregateStats(rankedIds: number[], candidates: Candidate[]) {
     work_preference_breakdown: createBreakdown('work_preference'),
     visa_status_breakdown: createBreakdown('visa_status'),
   };
+}
+
+// === HELPER FUNCTIONS ===
+
+function parseNumeric(value: unknown): number {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const cleaned = value.replace(/[$,]/g, '');
+    return parseInt(cleaned) || 0;
+  }
+  return 0;
 }

@@ -6,21 +6,14 @@ const openai = new OpenAI({
 });
 
 export async function POST(request: NextRequest) {
-  let originalQuery = '';
-  let topCandidates: any[] = [];
-  let stats: any = {};
-
   try {
     const requestData = await request.json();
-    originalQuery = requestData.originalQuery;
-    topCandidates = requestData.topCandidates;
-    stats = requestData.stats;
+    const originalQuery = requestData.originalQuery;
+    const topCandidates = requestData.topCandidates;
+    const stats = requestData.stats;
 
     if (!process.env.OPENAI_API_KEY) {
-      // Return mock response if no API key
-      return NextResponse.json({
-        summary: getMockSpeakResponse(originalQuery, topCandidates, stats),
-      });
+      return new Response('OpenAI API key not configured', { status: 500 });
     }
 
     if (stats.count === 0) {
@@ -91,51 +84,9 @@ Generate a concise, professional summary for the recruiter highlighting the key 
     });
   } catch (error) {
     console.error('OpenAI API error in SPEAK phase:', error);
-    // Fall back to mock implementation
-    return NextResponse.json({
-      summary: getMockSpeakResponse(originalQuery, topCandidates, stats),
-    });
+    return new Response(
+      `OpenAI API error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      { status: 500 }
+    );
   }
-}
-
-function getMockSpeakResponse(
-  originalQuery: string,
-  topCandidates: any[],
-  stats: { count: number; avg_experience: string; top_skills: any[] }
-): string {
-  if (stats.count === 0) {
-    return 'No candidates match your criteria. Try adjusting your search terms or expanding your requirements.';
-  }
-
-  const top5 = topCandidates.slice(0, 5);
-  const topNames = top5.map(c => c.full_name).slice(0, 3);
-
-  let summary = `I found ${stats.count} matches (avg ${stats.avg_experience} yrs experience).`;
-
-  if (topNames.length > 0) {
-    summary += ` Here are the top ${Math.min(3, topNames.length)}: ${topNames.join(', ')}.`;
-  }
-
-  if (stats.top_skills.length > 0) {
-    const topSkill = stats.top_skills[0];
-    summary += ` Most common skill: ${topSkill.skill} (${topSkill.count} candidates).`;
-  }
-
-  // Add contextual insights based on the query
-  const query = originalQuery.toLowerCase();
-  if (query.includes('cyprus') && stats.count > 0) {
-    const cyprusCount = topCandidates.filter(c => c.location === 'Cyprus').length;
-    if (cyprusCount > 0) {
-      summary += ` ${cyprusCount} are based in Cyprus.`;
-    }
-  }
-
-  if (query.includes('react') && stats.count > 0) {
-    const reactCount = topCandidates.filter(c => c.title.includes('React')).length;
-    if (reactCount > 0) {
-      summary += ` ${reactCount} are React specialists.`;
-    }
-  }
-
-  return summary;
 }

@@ -12,10 +12,7 @@ export async function performSpeakPhase(
   userQuery: string,
   rankedCandidates: Candidate[]
 ): Promise<void> {
-  const stats = aggregateStats(
-    rankedCandidates.map(c => c.id),
-    rankedCandidates
-  );
+  const stats = aggregateStats(rankedCandidates.map(c => c.id));
 
   const systemPrompt = `You are ATS-Lite, a helpful recruitment assistant. 
 Generate a well-formatted, professional summary of candidate search results.
