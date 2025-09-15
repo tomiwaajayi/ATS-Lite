@@ -59,6 +59,8 @@ async function performThinkPhaseWithRetry(
 
 CRITICAL: Respond with ONLY valid JSON. No explanations, no markdown, no extra text.
 
+MANDATORY: The "rank" object MUST ALWAYS contain a "primary" object with "field" and "direction" properties. NEVER return an empty rank object.
+
 Required JSON Structure:
 {
   "filter": {
@@ -82,8 +84,23 @@ FILTER FIELD SPECIFICATIONS:
 - work_preference: Exact values ("Remote", "Hybrid", "Onsite", "Any")
 - willing_to_relocate/open_to_contract: Boolean values (true/false)
 
+TITLE NORMALIZATION FOR DEVELOPER/ENGINEER VARIATIONS:
+- When user says "frontend developers" OR "frontend engineers" → use "/(Frontend|Front.end).*(Developer|Engineer)/i"
+- When user says "backend developers" OR "backend engineers" → use "/(Backend|Back.end).*(Developer|Engineer)/i"
+- When user says "fullstack developers" OR "fullstack engineers" → use "/(Full.?Stack|Fullstack).*(Developer|Engineer)/i"
+- When user says "software developers" OR "software engineers" → use "/(Software).*(Developer|Engineer)/i"
+- When user says "mobile developers" OR "mobile engineers" → use "/(Mobile|iOS|Android).*(Developer|Engineer)/i"
+- When user says "web developers" OR "web engineers" → use "/(Web).*(Developer|Engineer)/i"
+- When user says "data engineers" OR "data developers" → use "/(Data).*(Engineer|Developer)/i"
+- When user says "DevOps engineers" OR "DevOps developers" → use "/(DevOps|Dev.Ops).*(Engineer|Developer)/i"
+
 PATTERN MATCHING RULES:
 - For job types: "frontend" → "/Frontend/i", "backend" → "/Backend/i", "fullstack" → "/Full.?Stack/i"
+- For developer/engineer variations: "frontend developer" OR "frontend engineer" → "/(Frontend|Front.end).*(Developer|Engineer)/i"
+- For developer/engineer variations: "backend developer" OR "backend engineer" → "/(Backend|Back.end).*(Developer|Engineer)/i"
+- For developer/engineer variations: "fullstack developer" OR "fullstack engineer" → "/(Full.?Stack|Fullstack).*(Developer|Engineer)/i"
+- For developer/engineer variations: "software developer" OR "software engineer" → "/(Software).*(Developer|Engineer)/i"
+- For developer/engineer variations: "mobile developer" OR "mobile engineer" → "/(Mobile|iOS|Android).*(Developer|Engineer)/i"
 - For cloud roles: "cloud specialist", "cloud experience", "cloud engineer", "cloud expert" → "/Cloud.*Architect/i"
 - For seniority: "senior" → "/Senior/i", "junior" → "/Junior/i", "lead" → "/Lead/i"
 - For location normalization: "US/USA/America" → "USA", "UK/Britain" → "United Kingdom"
@@ -107,16 +124,24 @@ QUERY INTERPRETATION LOGIC:
 3. For ambiguous queries, prioritize commonly requested filters
 4. If query lacks clear criteria, use restrictive filter: {"title": ["__NO_MATCH__"]}
 5. Always provide both filter and rank objects
+6. MANDATORY: rank.primary object must ALWAYS be present with valid field and direction
+7. If no specific ranking is requested, default to: {"field": "years_experience", "direction": "desc"}
 
 EXAMPLES:
-- "React developers in USA" → include: {"skills": "React", "location": "USA"}
-- "Senior backend engineers, most experienced" → include: {"title": "/Senior.*Backend/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
-- "Remote workers under $100k" → include: {"work_preference": "Remote", "desired_salary_usd_max": 100000}
-- "cloud specialist" → include: {"title": "/Cloud.*Architect/i"}
-- "cloud experience" → include: {"title": "/Cloud.*Architect/i"}
-- "AWS expert" → include: {"skills": "AWS", "tags": "cloud"}
-- "cloud architect with GCP" → include: {"title": "/Cloud.*Architect/i", "skills": "GCP"}
-- "DevOps with cloud experience" → include: {"title": "/DevOps/i", "tags": "cloud"}`;
+- "React developers in USA" → include: {"skills": "React", "location": "USA"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "Frontend developers" → include: {"title": "/(Frontend|Front.end).*(Developer|Engineer)/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "Backend engineers" → include: {"title": "/(Backend|Back.end).*(Developer|Engineer)/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "Fullstack developers" → include: {"title": "/(Full.?Stack|Fullstack).*(Developer|Engineer)/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "Software engineers" → include: {"title": "/(Software).*(Developer|Engineer)/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "Mobile developers" → include: {"title": "/(Mobile|iOS|Android).*(Developer|Engineer)/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "Senior backend engineers, most experienced" → include: {"title": "/Senior.*(Backend|Back.end).*(Developer|Engineer)/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "Remote workers under $100k" → include: {"work_preference": "Remote", "desired_salary_usd_max": 100000}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "cloud specialist" → include: {"title": "/Cloud.*Architect/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "cloud experience" → include: {"title": "/Cloud.*Architect/i"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "AWS expert" → include: {"skills": "AWS", "tags": "cloud"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "cloud architect with GCP" → include: {"title": "/Cloud.*Architect/i", "skills": "GCP"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "DevOps with cloud experience" → include: {"title": "/DevOps/i", "tags": "cloud"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}
+- "candidates not in nigeria" → exclude: {"location": "Nigeria"}, rank: {"primary": {"field": "years_experience", "direction": "desc"}}`;
 
   // Log the request details
   const logData = {
@@ -310,11 +335,31 @@ function createIntelligentFallback(userQuery: string): MCPPlans {
   const queryLower = userQuery.toLowerCase();
 
   // Parse query keywords to make a decent guess
-  const fallbackFilter: any = { title: ['__NO_MATCH__'] }; // Default restrictive filter
+  let fallbackFilter: any = {};
   let fallbackRankField = 'years_experience';
   let fallbackDirection: 'asc' | 'desc' = 'desc';
 
-  // Basic keyword matching
+  // Check for location exclusions
+  if (
+    queryLower.includes('not in') ||
+    queryLower.includes('exclude') ||
+    queryLower.includes('except')
+  ) {
+    // Handle location exclusions
+    if (queryLower.includes('nigeria')) {
+      fallbackFilter = { exclude: { location: 'Nigeria' } };
+    } else if (queryLower.includes('usa') || queryLower.includes('america')) {
+      fallbackFilter = { exclude: { location: 'USA' } };
+    } else {
+      // Default to restrictive filter if we can't parse the exclusion
+      fallbackFilter = { include: { title: ['__NO_MATCH__'] } };
+    }
+  } else {
+    // Default restrictive filter for unclear queries
+    fallbackFilter = { include: { title: ['__NO_MATCH__'] } };
+  }
+
+  // Basic keyword matching for ranking
   if (
     queryLower.includes('experience') ||
     queryLower.includes('senior') ||
@@ -337,7 +382,7 @@ function createIntelligentFallback(userQuery: string): MCPPlans {
   });
 
   return {
-    filter: { include: fallbackFilter },
+    filter: fallbackFilter,
     rank: {
       primary: {
         field: fallbackRankField,

@@ -16,7 +16,6 @@ import { useUIStore } from '@/store';
 export default function FieldsFilter() {
   const { visibleFields, toggleFieldVisibility, setVisibleFields } = useUIStore();
 
-  // Define all available fields
   const allFields = [
     { key: 'id', label: 'ID', compulsory: true },
     { key: 'full_name', label: 'Name', compulsory: true },

@@ -1,5 +1,5 @@
 /**
- * Challenge Requirement Test as specified in xyz.md
+ * Challenge Requirement Test as specified
  * Input: "React dev, Cyprus, sort by experience desc"
  * Expectation: candidate #12 appears above #5
  */

@@ -73,9 +73,6 @@ export const metadata: Metadata = {
       'Modern ATS with AI-powered candidate search. Query with natural language and see the transparent workflow.',
     images: ['https://ats-lite-seven.vercel.app/og-image.png'],
   },
-  verification: {
-    google: 'google-site-verification-code-here', // Replace with actual verification code
-  },
   category: 'technology',
   classification: 'Business Software',
   referrer: 'origin-when-cross-origin',

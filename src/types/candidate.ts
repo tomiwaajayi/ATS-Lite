@@ -13,8 +13,8 @@ export interface Candidate {
   location: string;
   timezone: string;
   years_experience: number;
-  skills: string; // semicolon-separated
-  languages: string; // semicolon-separated
+  skills: string;
+  languages: string;
   education_level: EducationLevel;
   degree_major: string;
   availability_weeks: number;
@@ -25,10 +25,10 @@ export interface Candidate {
   open_to_contract: BooleanString;
   remote_experience_years: number;
   visa_status: VisaStatus;
-  citizenships: string; // semicolon-separated
+  citizenships: string;
   summary: string;
-  tags: string; // semicolon-separated
-  last_active: string; // ISO date string
+  tags: string;
+  last_active: string;
   linkedin_url: string;
   // For dynamic field access
   [key: string]: unknown;

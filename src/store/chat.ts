@@ -10,43 +10,36 @@ interface Message {
 }
 
 interface ChatState {
-  // Message history
   messages: Message[];
   input: string;
   isLoading: boolean;
 
-  // Track user queries and progress
   querySessions: QuerySession[];
   currentSessionId: string | null;
 
-  // Functions to update state
   setInput: (input: string) => void;
   setLoading: (loading: boolean) => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => string;
   updateMessage: (id: string, updates: Partial<Message>) => void;
   clearMessages: () => void;
 
-  // Query session functions
   startNewSession: (query: string) => string;
   addPhaseToSession: (sessionId: string, phase: Omit<MCPPhase, 'id'>) => void;
   updatePhaseInSession: (sessionId: string, phaseId: string, updates: Partial<MCPPhase>) => void;
   completeSession: (sessionId: string) => void;
   clearSessions: () => void;
 
-  // Helper functions
   getCurrentSession: () => QuerySession | null;
   getSessionPhases: (sessionId: string) => MCPPhase[];
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
-  // Default values
   messages: [],
   input: '',
   isLoading: false,
   querySessions: [],
   currentSessionId: null,
 
-  // Message functions
   setInput: input => set({ input }),
 
   setLoading: isLoading => set({ isLoading }),
@@ -68,7 +61,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   clearMessages: () => set({ messages: [] }),
 
-  // Session functions
   startNewSession: query => {
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newSession: QuerySession = {
@@ -85,7 +77,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
         .map(s => ({
           ...s,
           isActive: false,
-          // Collapse old timelines
           completed: true,
         }))
         .concat(newSession),
@@ -138,7 +129,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
       currentSessionId: null,
     }),
 
-  // Helper functions
   getCurrentSession: () => {
     const { querySessions, currentSessionId } = get();
     return querySessions.find(s => s.id === currentSessionId) || null;

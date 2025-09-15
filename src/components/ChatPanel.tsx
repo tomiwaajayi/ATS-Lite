@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, Minimize2, Send } from 'lucide-react';
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,6 @@ import { useCandidatesStore, useChatStore, useUIStore } from '@/store';
 export default function ChatPanel() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Get state from stores
   const { setRankedIds, setLoading, setHasSearched } = useCandidatesStore();
   const {
     messages,
@@ -41,7 +40,134 @@ export default function ChatPanel() {
 
   const [currentSuggestionIndex, setCurrentSuggestionIndex] = useState(0);
 
-  // Cycle through suggestions
+  // ReactMarkdown components configuration
+  const markdownComponents = {
+    h1: ({ children }: any) => <h1 className='text-lg font-bold mb-2'>{children}</h1>,
+    h2: ({ children }: any) => <h2 className='text-base font-bold mb-2'>{children}</h2>,
+    h3: ({ children }: any) => <h3 className='text-sm font-semibold mb-1'>{children}</h3>,
+    p: ({ children }: any) => <p className='mb-2 last:mb-0'>{children}</p>,
+    ul: ({ children }: any) => <ul className='list-disc list-inside mb-2 space-y-1'>{children}</ul>,
+    ol: ({ children }: any) => (
+      <ol className='list-decimal list-inside mb-2 space-y-1'>{children}</ol>
+    ),
+    li: ({ children }: any) => <li className='text-sm'>{children}</li>,
+    strong: ({ children }: any) => <strong className='font-semibold'>{children}</strong>,
+    em: ({ children }: any) => <em className='italic'>{children}</em>,
+  };
+
+  // stream processing function
+  const processStream = useCallback(
+    async (userQuery: string, sessionId: string, assistantMessageId: string) => {
+      try {
+        const response = await fetch('/api/match', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            messages: [{ role: 'user', content: userQuery }],
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`API Error (${response.status}): ${errorText}`);
+        }
+
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('No response body');
+        }
+
+        const parser = new StreamParser();
+        let assistantContent = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunks = parser.parse(value);
+
+          for (const chunk of chunks) {
+            switch (chunk.type) {
+              case 'phase':
+                addPhaseToSession(sessionId, {
+                  phase: chunk.phase as any,
+                  timestamp: new Date(),
+                  title: chunk.title || '',
+                  description: chunk.description || '',
+                  data: chunk.data,
+                });
+
+                if (chunk.phase === 'rank' && chunk.data?.rankedIds) {
+                  setTimeout(() => {
+                    setRankedIds(chunk.data?.rankedIds as number[]);
+                    setHasSearched(true);
+                    setLoading(false);
+                  }, 100);
+                }
+                break;
+
+              case 'content':
+                if (chunk.content) {
+                  assistantContent += chunk.content;
+                  updateMessage(assistantMessageId, {
+                    content: assistantContent,
+                    streaming: true,
+                  });
+                }
+                break;
+
+              case 'complete':
+                updateMessage(assistantMessageId, { streaming: false });
+                completeSession(sessionId);
+
+                if (chunk.data?.finalResults !== undefined) {
+                  setRankedIds(chunk.data.finalResults as number[]);
+                  setHasSearched(true);
+                }
+                setLoading(false);
+                break;
+
+              case 'error':
+                updateMessage(assistantMessageId, {
+                  content: `Error: ${chunk.error}`,
+                  streaming: false,
+                });
+                completeSession(sessionId);
+                setLoading(false);
+                break;
+            }
+          }
+        }
+
+        // Process any leftover data
+        const remainingChunks = parser.flush();
+        for (const chunk of remainingChunks) {
+          if (chunk.type === 'content' && chunk.content) {
+            assistantContent += chunk.content;
+            updateMessage(assistantMessageId, {
+              content: assistantContent,
+              streaming: false,
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error processing query:', error);
+        updateMessage(assistantMessageId, {
+          content:
+            error instanceof Error
+              ? `❌ Error: ${error.message}`
+              : '❌ Error processing your query. Please try again.',
+          streaming: false,
+        });
+        completeSession(sessionId);
+        throw error;
+      }
+    },
+    [setRankedIds, setLoading, setHasSearched, addPhaseToSession, updateMessage, completeSession]
+  );
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentSuggestionIndex(prevIndex => (prevIndex + 1) % suggestions.length);
@@ -95,7 +221,6 @@ export default function ChatPanel() {
   const handleSuggestionClick = async (suggestion: string) => {
     if (isLoading) return;
 
-    // Make sure we're online
     const isConnected = await checkNetworkConnection();
     if (!isConnected) return;
 
@@ -103,14 +228,11 @@ export default function ChatPanel() {
     setChatLoading(true);
     setLoading(true);
 
-    // Show user's message in chat
     addMessage({ type: 'user', content: suggestion });
     const userQuery = suggestion;
 
-    // Begin new conversation
     const sessionId = startNewSession(userQuery);
 
-    // Create empty response message
     const assistantMessageId = addMessage({
       type: 'assistant',
       content: '',
@@ -118,95 +240,13 @@ export default function ChatPanel() {
     });
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: userQuery }],
-        }),
-      });
-
-      if (!response.ok || !response.body) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const reader = response.body.getReader();
-
-      const parser = new StreamParser();
-      let assistantContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunks = parser.parse(value);
-
-        for (const chunk of chunks) {
-          switch (chunk.type) {
-            case 'phase':
-              addPhaseToSession(sessionId, {
-                phase: chunk.phase as any,
-                timestamp: new Date(),
-                title: chunk.title || '',
-                description: chunk.description || '',
-                data: chunk.data,
-              });
-
-              // Show results as soon as ranking is done
-              if (chunk.phase === 'rank' && chunk.data?.rankedIds) {
-                // Brief delay for animation
-                setTimeout(() => {
-                  setRankedIds(chunk.data?.rankedIds as number[]);
-                  setHasSearched(true); // Track that we searched
-                  setLoading(false); // Stop loading
-                }, 100);
-              }
-              break;
-
-            case 'content':
-              if (chunk.content) {
-                assistantContent += chunk.content;
-                updateMessage(assistantMessageId, {
-                  content: assistantContent,
-                  streaming: true,
-                });
-              }
-              break;
-
-            case 'complete':
-              updateMessage(assistantMessageId, { streaming: false });
-              completeSession(sessionId);
-
-              // Update results (even if empty)
-              if (chunk.data?.finalResults !== undefined) {
-                setRankedIds(chunk.data.finalResults as number[]);
-                setHasSearched(true); // Mark that a search has been performed
-              }
-              setLoading(false); // Done loading
-              break;
-
-            case 'error':
-              updateMessage(assistantMessageId, {
-                content: `Error: ${chunk.error}`,
-                streaming: false,
-              });
-              setLoading(false); // Stop loading on error
-              break;
-          }
-        }
-      }
+      await processStream(userQuery, sessionId, assistantMessageId);
     } catch (error) {
-      console.error('Chat error:', error);
-      updateMessage(assistantMessageId, {
-        content: `Error: ${error instanceof Error ? error.message : 'An unexpected error occurred'}`,
-        streaming: false,
-      });
+      // Error handling is already done in processStream
     } finally {
       setChatLoading(false);
-      setLoading(false); // Clear loading state
-      setInput(''); // Clear input after submission
+      setLoading(false);
+      setInput('');
     }
   };
 
@@ -221,15 +261,12 @@ export default function ChatPanel() {
     setChatLoading(true);
     setLoading(true);
 
-    // Show user's message in chat
     addMessage({ type: 'user', content: input.trim() });
     const userQuery = input.trim();
     setInput('');
 
-    // Begin new conversation
     const sessionId = startNewSession(userQuery);
 
-    // Create empty response message
     const assistantMessageId = addMessage({
       type: 'assistant',
       content: '',
@@ -237,109 +274,9 @@ export default function ChatPanel() {
     });
 
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          messages: [{ role: 'user', content: userQuery }],
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`API Error (${response.status}): ${errorText}`);
-      }
-
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('No response body');
-      }
-
-      const parser = new StreamParser();
-      let assistantContent = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunks = parser.parse(value);
-
-        for (const chunk of chunks) {
-          switch (chunk.type) {
-            case 'phase':
-              addPhaseToSession(sessionId, {
-                phase: chunk.phase as any,
-                timestamp: new Date(),
-                title: chunk.title || '',
-                description: chunk.description || '',
-                data: chunk.data,
-              });
-
-              // Show results as soon as ranking is done
-              if (chunk.phase === 'rank' && chunk.data?.rankedIds) {
-                // Brief delay for animation
-                setTimeout(() => {
-                  setRankedIds(chunk.data?.rankedIds as number[]);
-                  setHasSearched(true); // Track that we searched
-                  setLoading(false); // Stop loading
-                }, 100);
-              }
-              break;
-
-            case 'content':
-              if (chunk.content) {
-                assistantContent += chunk.content;
-                updateMessage(assistantMessageId, {
-                  content: assistantContent,
-                  streaming: true,
-                });
-              }
-              break;
-
-            case 'complete':
-              updateMessage(assistantMessageId, { streaming: false });
-              completeSession(sessionId);
-
-              // Update results (even if empty)
-              if (chunk.data?.finalResults !== undefined) {
-                setRankedIds(chunk.data.finalResults as number[]);
-                setHasSearched(true); // Mark that a search has been performed
-              }
-              setLoading(false); // Done loading
-              break;
-
-            case 'error':
-              updateMessage(assistantMessageId, {
-                content: `Error: ${chunk.error}`,
-                streaming: false,
-              });
-              completeSession(sessionId);
-              setLoading(false); // Stop loading on error
-              break;
-          }
-        }
-      }
-
-      // Process any leftover data
-      const remainingChunks = parser.flush();
-      for (const chunk of remainingChunks) {
-        if (chunk.type === 'content' && chunk.content) {
-          assistantContent += chunk.content;
-          updateMessage(assistantMessageId, {
-            content: assistantContent,
-            streaming: false,
-          });
-        }
-      }
+      await processStream(userQuery, sessionId, assistantMessageId);
     } catch (error) {
-      console.error('Error processing query:', error);
-      updateMessage(assistantMessageId, {
-        content: '❌ Error processing your query. Please try again.',
-        streaming: false,
-      });
-      completeSession(sessionId);
+      // Error handled in processStream function
     } finally {
       setChatLoading(false);
       setLoading(false);
@@ -472,64 +409,12 @@ export default function ChatPanel() {
                         <span>{message.content || ''}</span>
                       ) : message.streaming ? (
                         <div className='typing-content'>
-                          <ReactMarkdown
-                            components={{
-                              h1: ({ children }) => (
-                                <h1 className='text-lg font-bold mb-2'>{children}</h1>
-                              ),
-                              h2: ({ children }) => (
-                                <h2 className='text-base font-bold mb-2'>{children}</h2>
-                              ),
-                              h3: ({ children }) => (
-                                <h3 className='text-sm font-semibold mb-1'>{children}</h3>
-                              ),
-                              p: ({ children }) => <p className='mb-2 last:mb-0'>{children}</p>,
-                              ul: ({ children }) => (
-                                <ul className='list-disc list-inside mb-2 space-y-1'>{children}</ul>
-                              ),
-                              ol: ({ children }) => (
-                                <ol className='list-decimal list-inside mb-2 space-y-1'>
-                                  {children}
-                                </ol>
-                              ),
-                              li: ({ children }) => <li className='text-sm'>{children}</li>,
-                              strong: ({ children }) => (
-                                <strong className='font-semibold'>{children}</strong>
-                              ),
-                              em: ({ children }) => <em className='italic'>{children}</em>,
-                            }}
-                          >
+                          <ReactMarkdown components={markdownComponents}>
                             {message.content || ''}
                           </ReactMarkdown>
                         </div>
                       ) : (
-                        <ReactMarkdown
-                          components={{
-                            h1: ({ children }) => (
-                              <h1 className='text-lg font-bold mb-2'>{children}</h1>
-                            ),
-                            h2: ({ children }) => (
-                              <h2 className='text-base font-bold mb-2'>{children}</h2>
-                            ),
-                            h3: ({ children }) => (
-                              <h3 className='text-sm font-semibold mb-1'>{children}</h3>
-                            ),
-                            p: ({ children }) => <p className='mb-2 last:mb-0'>{children}</p>,
-                            ul: ({ children }) => (
-                              <ul className='list-disc list-inside mb-2 space-y-1'>{children}</ul>
-                            ),
-                            ol: ({ children }) => (
-                              <ol className='list-decimal list-inside mb-2 space-y-1'>
-                                {children}
-                              </ol>
-                            ),
-                            li: ({ children }) => <li className='text-sm'>{children}</li>,
-                            strong: ({ children }) => (
-                              <strong className='font-semibold'>{children}</strong>
-                            ),
-                            em: ({ children }) => <em className='italic'>{children}</em>,
-                          }}
-                        >
+                        <ReactMarkdown components={markdownComponents}>
                           {message.content || ''}
                         </ReactMarkdown>
                       )}

@@ -243,9 +243,9 @@ function SessionEntry({
     // When a new query starts, collapse all non-active sessions
     if (newQueryStarted) {
       if (session.isActive) {
-        setIsExpanded(true); // Expand the active session
+        setIsExpanded(true);
       } else {
-        setIsExpanded(false); // Collapse all other sessions
+        setIsExpanded(false);
       }
     }
   }, [newQueryStarted, session.isActive]);

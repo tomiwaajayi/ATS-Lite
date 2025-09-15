@@ -426,7 +426,7 @@ The application uses Next.js API routes for secure server-side processing:
 - **Output**: Markdown-formatted recruiter summary
 - **Features**: Contextual insights and recommendations
 
-### `/api/chat` - Main Workflow
+### `/api/match` - Main Workflow
 
 - **Input**: User messages array
 - **Process**: Complete MCP workflow orchestration

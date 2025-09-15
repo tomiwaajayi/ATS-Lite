@@ -15,14 +15,8 @@ interface UIState {
   isCandidateDetailsVisible: boolean;
 
   // Fields filter
-  isFieldsFilterOpen: boolean;
   visibleFields: string[];
 
-  // Loading and animations
-  showIntroAnimation: boolean;
-  componentsLoaded: boolean;
-
-  // Functions to update state
   toggleTimelineSidebar: () => void;
   setTimelineSidebarVisible: (visible: boolean) => void;
 
@@ -30,25 +24,19 @@ interface UIState {
 
   setCandidateDetailsVisible: (visible: boolean) => void;
 
-  setFieldsFilterOpen: (open: boolean) => void;
   setVisibleFields: (fields: string[]) => void;
   toggleFieldVisibility: (field: string) => void;
 
   setIsDarkMode: (isDarkMode: boolean) => void;
-
-  setShowIntroAnimation: (show: boolean) => void;
-  setComponentsLoaded: (loaded: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
   persist(
     set => ({
-      // Default values
       isDarkMode: false,
       isTimelineSidebarVisible: true,
       isChatExpanded: true, // Start with chat open
       isCandidateDetailsVisible: false,
-      isFieldsFilterOpen: false,
       visibleFields: [
         'id',
         'full_name',
@@ -58,10 +46,7 @@ export const useUIStore = create<UIState>()(
         'skills',
         'desired_salary_usd',
       ],
-      showIntroAnimation: false,
-      componentsLoaded: true,
 
-      // Timeline sidebar actions
       toggleTimelineSidebar: () =>
         set(state => ({
           isTimelineSidebarVisible: !state.isTimelineSidebarVisible,
@@ -69,14 +54,9 @@ export const useUIStore = create<UIState>()(
 
       setTimelineSidebarVisible: isTimelineSidebarVisible => set({ isTimelineSidebarVisible }),
 
-      // Chat panel actions
       setChatExpanded: isChatExpanded => set({ isChatExpanded }),
 
-      // Candidate details actions
       setCandidateDetailsVisible: isCandidateDetailsVisible => set({ isCandidateDetailsVisible }),
-
-      // Fields filter actions
-      setFieldsFilterOpen: isFieldsFilterOpen => set({ isFieldsFilterOpen }),
 
       setVisibleFields: visibleFields => set({ visibleFields }),
 
@@ -91,16 +71,10 @@ export const useUIStore = create<UIState>()(
         }));
       },
 
-      // Dark mode actions
       setIsDarkMode: isDarkMode => set({ isDarkMode }),
-
-      // Animation actions
-      setShowIntroAnimation: showIntroAnimation => set({ showIntroAnimation }),
-
-      setComponentsLoaded: componentsLoaded => set({ componentsLoaded }),
     }),
     {
-      name: 'ats-lite-ui-storage', // Storage key
+      name: 'ats-lite-ui-storage',
       partialize: state => ({
         isDarkMode: state.isDarkMode,
         isTimelineSidebarVisible: state.isTimelineSidebarVisible,

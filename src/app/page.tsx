@@ -21,21 +21,18 @@ export default function HomePage() {
 
   const { isTimelineSidebarVisible, toggleTimelineSidebar } = useUIStore();
 
-  // Splash screen state
   const [showSplash, setShowSplash] = useState(true);
   const [showContent, setShowContent] = useState(false);
 
   const handleSplashComplete = () => {
     setShowSplash(false);
-    // Small delay before showing content for smoother transition
+
     setTimeout(() => {
       setShowContent(true);
     }, 100);
   };
 
-  // Always show splash on page load/refresh
   useEffect(() => {
-    // Always start with splash screen
     setShowSplash(true);
     setShowContent(false);
   }, []);
@@ -44,7 +41,7 @@ export default function HomePage() {
     // Load candidates from CSV
     loadCandidates('/candidates.csv').then(candidates => {
       setCandidates(candidates);
-      // Initially show all candidates in their original order
+
       const allIds = candidates.map(c => c.id);
       setRankedIds(allIds);
     });

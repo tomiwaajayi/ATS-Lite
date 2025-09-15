@@ -14,9 +14,6 @@ export function setCandidatesGlobal(candidates: Candidate[]) {
   candidatesGlobal = candidates;
 }
 
-// === TOOL SIGNATURES ===
-// These functions match the exact signatures required by xyz.md
-
 /**
  * Filters candidates based on the provided filter plan
  * Specification: filterCandidates(plan) → { include?, exclude? } → Candidate[]
