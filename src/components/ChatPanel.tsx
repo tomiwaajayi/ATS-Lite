@@ -241,7 +241,7 @@ export default function ChatPanel() {
 
     try {
       await processStream(userQuery, sessionId, assistantMessageId);
-    } catch (error) {
+    } catch {
       // Error handling is already done in processStream
     } finally {
       setChatLoading(false);
@@ -275,7 +275,7 @@ export default function ChatPanel() {
 
     try {
       await processStream(userQuery, sessionId, assistantMessageId);
-    } catch (error) {
+    } catch {
       // Error handled in processStream function
     } finally {
       setChatLoading(false);
