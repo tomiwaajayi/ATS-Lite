@@ -1,7 +1,4 @@
 import { Candidate } from '@/types/candidate';
-import { FilterPlan, RankingPlan } from '@/types/filtering';
-import { applyCandidateFilters } from './candidate-filtering';
-import { applyCandidateRanking } from './candidate-ranking';
 
 // Global candidate storage for  tools
 let candidatesGlobal: Candidate[] = [];
@@ -12,31 +9,6 @@ let candidatesGlobal: Candidate[] = [];
  */
 export function setCandidatesGlobal(candidates: Candidate[]) {
   candidatesGlobal = candidates;
-}
-
-/**
- * Filters candidates based on the provided filter plan
- * Specification: filterCandidates(plan) → { include?, exclude? } → Candidate[]
- */
-export function filterCandidates(plan: FilterPlan): Candidate[] {
-  const result = applyCandidateFilters(candidatesGlobal, plan);
-  return result.filtered;
-}
-
-/**
- * Ranks candidates by the specified criteria
- * Specification: rankCandidates(ids, plan) → { primary, tie_breakers? } → Candidate[]
- */
-export function rankCandidates(ids: number[], plan: RankingPlan): Candidate[] {
-  // Get candidates by IDs
-  const candidates = ids
-    .map(id => candidatesGlobal.find(c => c.id === id))
-    .filter((c): c is Candidate => c !== undefined);
-
-  if (!candidates.length) return [];
-
-  const result = applyCandidateRanking(candidates, plan);
-  return result.ranked;
 }
 
 /**

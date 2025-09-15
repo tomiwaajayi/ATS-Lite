@@ -18,11 +18,8 @@ interface UIState {
   visibleFields: string[];
 
   toggleTimelineSidebar: () => void;
-  setTimelineSidebarVisible: (visible: boolean) => void;
 
   setChatExpanded: (expanded: boolean) => void;
-
-  setCandidateDetailsVisible: (visible: boolean) => void;
 
   setVisibleFields: (fields: string[]) => void;
   toggleFieldVisibility: (field: string) => void;
@@ -52,11 +49,7 @@ export const useUIStore = create<UIState>()(
           isTimelineSidebarVisible: !state.isTimelineSidebarVisible,
         })),
 
-      setTimelineSidebarVisible: isTimelineSidebarVisible => set({ isTimelineSidebarVisible }),
-
       setChatExpanded: isChatExpanded => set({ isChatExpanded }),
-
-      setCandidateDetailsVisible: isCandidateDetailsVisible => set({ isCandidateDetailsVisible }),
 
       setVisibleFields: visibleFields => set({ visibleFields }),
 

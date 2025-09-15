@@ -62,33 +62,3 @@ export interface StreamWriter {
   close(): Promise<void>;
   isActive(): boolean;
 }
-
-// Stream reader interface
-export interface StreamReader {
-  read(): Promise<StreamChunk | null>;
-  onChunk(callback: (chunk: StreamChunk) => void): void;
-  onError(callback: (error: Error) => void): void;
-  onComplete(callback: () => void): void;
-  close(): void;
-}
-
-// Stream configuration
-export interface StreamConfig {
-  bufferSize?: number;
-  maxChunkSize?: number;
-  timeout?: number;
-  retryAttempts?: number;
-  heartbeatInterval?: number;
-}
-
-// Stream state
-export type StreamState = 'idle' | 'active' | 'paused' | 'completed' | 'error';
-
-export interface StreamStatus {
-  state: StreamState;
-  chunksProcessed: number;
-  bytesTransferred: number;
-  startTime: Date;
-  lastActivity: Date;
-  error?: string;
-}

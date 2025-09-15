@@ -20,33 +20,3 @@ export interface QuerySession {
   completed: boolean;
   error?: string;
 }
-
-// Workflow execution context
-export interface MCPWorkflowContext {
-  sessionId: string;
-  userQuery: string;
-  totalCandidates: number;
-  startTime: number;
-  phases: MCPPhase[];
-}
-
-// MCP phase result
-export interface MCPPhaseResult {
-  success: boolean;
-  phase: MCPPhaseType;
-  duration: number;
-  data?: Record<string, unknown>;
-  error?: string;
-}
-
-// Complete workflow result
-export interface MCPWorkflowResult {
-  sessionId: string;
-  success: boolean;
-  totalDuration: number;
-  phases: MCPPhaseResult[];
-  finalResults?: number[]; // candidate IDs
-  totalCandidates: number;
-  filteredCount: number;
-  error?: string;
-}

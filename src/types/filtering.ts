@@ -107,17 +107,3 @@ export interface RankingResult<T> {
   rankedIds: number[];
   criteria: RankingPlan | null;
 }
-
-// Any type of filter value
-export type FilterValue = string | string[] | number | boolean | undefined;
-
-// Complete processing results
-export interface ProcessingResult<T> {
-  filtered: T[];
-  ranked: T[];
-  rankedIds: number[];
-  filterCount: number;
-  totalProcessed: number;
-  appliedFilters: FilterPlan;
-  appliedRanking: RankingPlan;
-}

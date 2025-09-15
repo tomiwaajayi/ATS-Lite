@@ -101,39 +101,3 @@ export function parseBoolean(value: string | boolean): boolean {
   const normalized = normalizeString(value.toString());
   return normalized === 'yes' || normalized === 'true' || normalized === '1';
 }
-
-// Split skills string into array
-export function getSkillsArray(skillsString: string | undefined): string[] {
-  if (!skillsString) return [];
-  return skillsString
-    .split(';')
-    .map(s => s.trim())
-    .filter(Boolean);
-}
-
-// Split languages string into array
-export function getLanguagesArray(languagesString: string | undefined): string[] {
-  if (!languagesString) return [];
-  return languagesString
-    .split(';')
-    .map(s => s.trim())
-    .filter(Boolean);
-}
-
-// Split citizenships string into array
-export function getCitizenshipsArray(citizenshipsString: string | undefined): string[] {
-  if (!citizenshipsString) return [];
-  return citizenshipsString
-    .split(';')
-    .map(s => s.trim())
-    .filter(Boolean);
-}
-
-// Split tags string into array
-export function getTagsArray(tagsString: string | undefined): string[] {
-  if (!tagsString) return [];
-  return tagsString
-    .split(';')
-    .map(s => s.trim())
-    .filter(Boolean);
-}

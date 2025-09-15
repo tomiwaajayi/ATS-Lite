@@ -21,16 +21,13 @@ interface ChatState {
   setLoading: (loading: boolean) => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'>) => string;
   updateMessage: (id: string, updates: Partial<Message>) => void;
-  clearMessages: () => void;
 
   startNewSession: (query: string) => string;
   addPhaseToSession: (sessionId: string, phase: Omit<MCPPhase, 'id'>) => void;
-  updatePhaseInSession: (sessionId: string, phaseId: string, updates: Partial<MCPPhase>) => void;
   completeSession: (sessionId: string) => void;
   clearSessions: () => void;
 
   getCurrentSession: () => QuerySession | null;
-  getSessionPhases: (sessionId: string) => MCPPhase[];
 }
 
 export const useChatStore = create<ChatState>((set, get) => ({
@@ -58,8 +55,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set(state => ({
       messages: state.messages.map(msg => (msg.id === id ? { ...msg, ...updates } : msg)),
     })),
-
-  clearMessages: () => set({ messages: [] }),
 
   startNewSession: query => {
     const sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -99,21 +94,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }));
   },
 
-  updatePhaseInSession: (sessionId, phaseId, updates) => {
-    set(state => ({
-      querySessions: state.querySessions.map(session =>
-        session.id === sessionId
-          ? {
-              ...session,
-              phases: session.phases.map(phase =>
-                phase.id === phaseId ? { ...phase, ...updates } : phase
-              ),
-            }
-          : session
-      ),
-    }));
-  },
-
   completeSession: sessionId => {
     set(state => ({
       querySessions: state.querySessions.map(session =>
@@ -132,11 +112,5 @@ export const useChatStore = create<ChatState>((set, get) => ({
   getCurrentSession: () => {
     const { querySessions, currentSessionId } = get();
     return querySessions.find(s => s.id === currentSessionId) || null;
-  },
-
-  getSessionPhases: sessionId => {
-    const { querySessions } = get();
-    const session = querySessions.find(s => s.id === sessionId);
-    return session?.phases || [];
   },
 }));

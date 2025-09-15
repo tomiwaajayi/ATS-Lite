@@ -51,30 +51,3 @@ export interface ParsedCandidate
 
 // All possible candidate fields
 export type CandidateField = keyof Candidate;
-
-export type NumericCandidateField =
-  | 'id'
-  | 'years_experience'
-  | 'availability_weeks'
-  | 'notice_period_weeks'
-  | 'desired_salary_usd'
-  | 'remote_experience_years';
-
-export type StringCandidateField =
-  | 'full_name'
-  | 'title'
-  | 'location'
-  | 'timezone'
-  | 'skills'
-  | 'languages'
-  | 'education_level'
-  | 'degree_major'
-  | 'work_preference'
-  | 'visa_status'
-  | 'citizenships'
-  | 'summary'
-  | 'tags'
-  | 'last_active'
-  | 'linkedin_url';
-
-export type BooleanCandidateField = 'willing_to_relocate' | 'open_to_contract';

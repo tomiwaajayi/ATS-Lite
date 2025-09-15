@@ -3,7 +3,6 @@ import { Candidate } from '@/types/candidate';
 
 interface CandidatesState {
   candidates: Candidate[];
-  filteredIds: number[];
   rankedIds: number[];
   selectedCandidateId: number | null;
 
@@ -25,7 +24,6 @@ interface CandidatesState {
 export const useCandidatesStore = create<CandidatesState>((set, get) => ({
   // Default values
   candidates: [],
-  filteredIds: [],
   rankedIds: [],
   selectedCandidateId: null,
   loading: false,
